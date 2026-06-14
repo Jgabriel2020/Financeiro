@@ -5,69 +5,77 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Solicitar Pagamento · FinanceiroPro</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <div class="public-page">
-    <div style="width:100%;max-width:520px;">
-      <a href="index.html" class="back-link">← Voltar ao início</a>
+    <div style="width:100%;max-width:500px;">
+      <a href="index.html" class="back-link">
+        <i class="fa-solid fa-arrow-left"></i> Voltar ao início
+      </a>
 
+      <!-- Formulário -->
       <div class="form-card" id="formSection">
         <div class="form-card-header">
-          <div class="icon">💸</div>
+          <div class="form-card-icon">
+            <i class="fa-solid fa-file-invoice-dollar"></i>
+          </div>
           <h2>Solicitar Pagamento</h2>
-          <p>Preencha os dados abaixo para enviar sua solicitação</p>
+          <p>Preencha os dados para enviar sua solicitação</p>
         </div>
 
         <form id="paymentForm">
           <div class="form-group">
-            <label>Chave Pix <span>*</span></label>
+            <label>Chave Pix <span class="required">*</span></label>
             <input type="text" id="pix_key" class="form-control" placeholder="CPF, e-mail, telefone ou chave aleatória" required>
           </div>
 
           <div class="form-group">
-            <label>Valor (R$) <span>*</span></label>
+            <label>Valor (R$) <span class="required">*</span></label>
             <input type="text" id="value" class="form-control" placeholder="0,00" required>
           </div>
 
           <div class="form-group">
-            <label>Nome Completo <span>*</span></label>
+            <label>Nome Completo <span class="required">*</span></label>
             <input type="text" id="name" class="form-control" placeholder="Seu nome completo" required>
           </div>
 
           <div class="form-group">
-            <label>Cidade <span>*</span></label>
-            <input type="text" id="city" class="form-control" placeholder="Ex: São Paulo - SP" required>
+            <label>Cidade <span class="required">*</span></label>
+            <input type="text" id="city" class="form-control" placeholder="Ex: São Paulo — SP" required>
           </div>
 
           <div class="form-group">
-            <label>Motivo do Pagamento <span>*</span></label>
-            <textarea id="reason" class="form-control" rows="3" placeholder="Descreva o motivo da solicitação..." required></textarea>
+            <label>Motivo do Pagamento <span class="required">*</span></label>
+            <textarea id="reason" class="form-control" placeholder="Descreva o motivo da solicitação..." required></textarea>
           </div>
 
-          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:14px;" id="submitBtn">
+          <button type="submit" class="btn btn-primary btn-lg" style="width:100%;justify-content:center;" id="submitBtn">
             Enviar Solicitação
           </button>
         </form>
       </div>
 
-      <!-- Success -->
+      <!-- Sucesso -->
       <div class="form-card" id="successSection" style="display:none;">
-        <div class="success-card">
-          <div class="icon">✅</div>
-          <h3>Solicitação Enviada!</h3>
-          <p>Sua solicitação foi recebida com sucesso.</p>
-          <p>O pagamento será processado em até <strong>24 horas</strong>.</p>
+        <div class="success-block">
+          <div class="success-icon">
+            <i class="fa-solid fa-check"></i>
+          </div>
+          <h3>Solicitação enviada!</h3>
+          <p>Seu pedido foi recebido com sucesso.</p>
+          <p style="margin-top:4px;">O pagamento será processado em até <strong>24 horas</strong>.</p>
 
           <div class="protocol-box" id="protocolDisplay"></div>
 
-          <p style="font-size:12px;color:#94A3B8;margin-bottom:20px;">
+          <p style="font-size:12px;color:#94A3B8;margin-bottom:22px;">
             Guarde este número de protocolo para acompanhamento.
           </p>
 
-          <div style="display:flex;gap:10px;justify-content:center;">
-            <a href="solicitar.html" class="btn btn-primary">Nova Solicitação</a>
-            <a href="index.html" class="btn btn-ghost">Início</a>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <a href="solicitar.html" class="btn btn-primary">Nova solicitação</a>
+            <a href="index.html" class="btn btn-ghost">Voltar ao início</a>
           </div>
         </div>
       </div>
@@ -78,13 +86,11 @@
 
   <script src="js/config.js"></script>
   <script>
-    // Formata valor como moeda
     const valueInput = document.getElementById('value');
-    valueInput.addEventListener('input', (e) => {
+    valueInput.addEventListener('input', e => {
       let v = e.target.value.replace(/\D/g, '');
       if (!v) { e.target.value = ''; return; }
-      v = (parseInt(v) / 100).toFixed(2);
-      e.target.value = v.replace('.', ',');
+      e.target.value = (parseInt(v) / 100).toFixed(2).replace('.', ',');
     });
 
     function showToast(msg, type = '') {
@@ -94,23 +100,19 @@
       setTimeout(() => t.className = 'toast', 3500);
     }
 
-    function parseValue(str) {
-      return parseFloat(str.replace(',', '.')) || 0;
-    }
-
     function generateProtocol() {
       return 'FP' + Date.now().toString().slice(-8).toUpperCase();
     }
 
-    document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+    document.getElementById('paymentForm').addEventListener('submit', async e => {
       e.preventDefault();
       const btn = document.getElementById('submitBtn');
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span> Enviando...';
 
-      const value = parseValue(document.getElementById('value').value);
+      const value = parseFloat(document.getElementById('value').value.replace(',', '.')) || 0;
       if (value <= 0) {
-        showToast('Informe um valor válido', 'error');
+        showToast('Informe um valor válido.', 'error');
         btn.disabled = false;
         btn.textContent = 'Enviar Solicitação';
         return;
@@ -119,18 +121,17 @@
       const protocol = generateProtocol();
 
       const { error } = await supabase.from('payment_requests').insert({
-        pix_key:   document.getElementById('pix_key').value.trim(),
+        pix_key:  document.getElementById('pix_key').value.trim(),
         value,
-        name:      document.getElementById('name').value.trim(),
-        city:      document.getElementById('city').value.trim(),
-        reason:    document.getElementById('reason').value.trim(),
-        status:    'pendente',
+        name:     document.getElementById('name').value.trim(),
+        city:     document.getElementById('city').value.trim(),
+        reason:   document.getElementById('reason').value.trim(),
+        status:   'pendente',
         protocol
       });
 
       if (error) {
-        showToast('Erro ao enviar solicitação. Tente novamente.', 'error');
-        console.error(error);
+        showToast('Erro ao enviar. Tente novamente.', 'error');
         btn.disabled = false;
         btn.textContent = 'Enviar Solicitação';
         return;

@@ -3,65 +3,100 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kanban · FinanceiroPro Admin</title>
+  <title>Kanban · FinanceiroPro</title>
   <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-<!-- SIDEBAR -->
 <aside class="sidebar">
-  <div class="sidebar-logo">
-    <h1>💰 FinanceiroPro</h1>
-    <span>Painel Administrativo</span>
+  <div class="sidebar-brand">
+    <div class="brand-icon"><i class="fa-solid fa-chart-line"></i></div>
+    <div class="brand-text">
+      <strong>FinanceiroPro</strong>
+      <span>Painel Admin</span>
+    </div>
   </div>
   <nav>
-    <a href="kanban.html" class="nav-item active">📋 Kanban</a>
-    <a href="relatorios.html" class="nav-item">📊 Relatórios</a>
-    <a href="aportes.html" class="nav-item">🏗️ Aportes de Obras</a>
+    <div class="nav-section">Menu</div>
+    <a href="kanban.html" class="nav-item active">
+      <i class="fa-solid fa-table-columns"></i> Kanban
+    </a>
+    <a href="relatorios.html" class="nav-item">
+      <i class="fa-solid fa-chart-bar"></i> Relatórios
+    </a>
+    <a href="aportes.html" class="nav-item">
+      <i class="fa-solid fa-building"></i> Aportes de Obras
+    </a>
   </nav>
   <div class="sidebar-footer">
-    <div style="color:#94A3B8;font-size:12px;margin-bottom:10px;" id="userEmail"></div>
-    <button class="btn-logout" onclick="logout()">🚪 Sair</button>
+    <div class="sidebar-user">
+      <div class="avatar"><i class="fa-solid fa-user"></i></div>
+      <span id="userLabel">—</span>
+    </div>
+    <button class="btn-logout" onclick="logout()">
+      <i class="fa-solid fa-right-from-bracket"></i> Sair
+    </button>
   </div>
 </aside>
 
-<!-- MAIN -->
 <div class="main">
   <div class="topbar">
-    <h2>Solicitações de Pagamento</h2>
-    <div style="display:flex;gap:10px;align-items:center;">
-      <span style="font-size:13px;color:#64748B;" id="lastUpdate"></span>
-      <button class="btn btn-ghost btn-sm" onclick="loadRequests()">🔄 Atualizar</button>
+    <div class="topbar-left">
+      <h2>Solicitações de Pagamento</h2>
+    </div>
+    <div class="topbar-right">
+      <span style="font-size:12px;color:var(--muted);" id="lastUpdate"></span>
+      <button class="btn btn-ghost btn-sm" onclick="loadRequests()">
+        <i class="fa-solid fa-rotate-right"></i> Atualizar
+      </button>
     </div>
   </div>
 
   <div class="page-body">
+
     <!-- Stats -->
-    <div class="stats-grid" id="statsGrid">
+    <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-icon" style="background:#EFF6FF;">📋</div>
-        <div class="stat-info"><p>Pendentes</p><h3 id="statPendente">-</h3></div>
+        <div class="stat-label">
+          Pendentes
+          <span class="dot" style="background:#3B82F6;"></span>
+        </div>
+        <div class="stat-value" id="statPendente">—</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon" style="background:#FFFBEB;">🔍</div>
-        <div class="stat-info"><p>Em Análise</p><h3 id="statAnalise">-</h3></div>
+        <div class="stat-label">
+          Em Análise
+          <span class="dot" style="background:#F59E0B;"></span>
+        </div>
+        <div class="stat-value" id="statAnalise">—</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon" style="background:#ECFDF5;">✅</div>
-        <div class="stat-info"><p>Pagos</p><h3 id="statPago">-</h3></div>
+        <div class="stat-label">
+          Pagos
+          <span class="dot" style="background:#10B981;"></span>
+        </div>
+        <div class="stat-value" id="statPago">—</div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon" style="background:#FEF2F2;">❌</div>
-        <div class="stat-info"><p>Rejeitados</p><h3 id="statRejeitado">-</h3></div>
+        <div class="stat-label">
+          Rejeitados
+          <span class="dot" style="background:#EF4444;"></span>
+        </div>
+        <div class="stat-value" id="statRejeitado">—</div>
       </div>
     </div>
 
-    <!-- Kanban Board -->
+    <!-- Kanban -->
     <div class="kanban-board">
-      <div class="kanban-col col-pendente" id="col-pendente">
+      <div class="kanban-col col-pendente">
         <div class="kanban-col-header">
-          🔵 Pendente <span class="count" id="cnt-pendente">0</span>
+          <div class="col-header-left">
+            <span class="col-dot"></span>
+            <span class="col-title">Pendente</span>
+          </div>
+          <span class="col-count" id="cnt-pendente">0</span>
         </div>
         <div class="kanban-cards" id="cards-pendente"
           ondragover="onDragOver(event,'pendente')"
@@ -70,9 +105,13 @@
         </div>
       </div>
 
-      <div class="kanban-col col-analise" id="col-analise">
+      <div class="kanban-col col-analise">
         <div class="kanban-col-header">
-          🟡 Em Análise <span class="count" id="cnt-analise">0</span>
+          <div class="col-header-left">
+            <span class="col-dot"></span>
+            <span class="col-title">Em Análise</span>
+          </div>
+          <span class="col-count" id="cnt-analise">0</span>
         </div>
         <div class="kanban-cards" id="cards-em_analise"
           ondragover="onDragOver(event,'em_analise')"
@@ -81,9 +120,13 @@
         </div>
       </div>
 
-      <div class="kanban-col col-pago" id="col-pago">
+      <div class="kanban-col col-pago">
         <div class="kanban-col-header">
-          🟢 Pago <span class="count" id="cnt-pago">0</span>
+          <div class="col-header-left">
+            <span class="col-dot"></span>
+            <span class="col-title">Pago</span>
+          </div>
+          <span class="col-count" id="cnt-pago">0</span>
         </div>
         <div class="kanban-cards" id="cards-pago"
           ondragover="onDragOver(event,'pago')"
@@ -92,9 +135,13 @@
         </div>
       </div>
 
-      <div class="kanban-col col-rejeitado" id="col-rejeitado">
+      <div class="kanban-col col-rejeitado">
         <div class="kanban-col-header">
-          🔴 Rejeitado <span class="count" id="cnt-rejeitado">0</span>
+          <div class="col-header-left">
+            <span class="col-dot"></span>
+            <span class="col-title">Rejeitado</span>
+          </div>
+          <span class="col-count" id="cnt-rejeitado">0</span>
         </div>
         <div class="kanban-cards" id="cards-rejeitado"
           ondragover="onDragOver(event,'rejeitado')"
@@ -103,67 +150,66 @@
         </div>
       </div>
     </div>
+
   </div>
 </div>
 
-<!-- MODAL DETALHES -->
+<!-- MODAL -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
   <div class="modal">
     <div class="modal-header">
       <h3>Detalhes da Solicitação</h3>
-      <button class="btn-close" onclick="closeModal()">✕</button>
+      <button class="btn-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body">
-      <!-- Info do solicitante -->
       <div class="info-grid" id="modalInfo"></div>
-
       <div class="divider"></div>
 
-      <!-- Campos editáveis pelo admin -->
       <div class="form-group">
         <label>Status</label>
         <select id="modalStatus" class="form-control">
-          <option value="pendente">🔵 Pendente</option>
-          <option value="em_analise">🟡 Em Análise</option>
-          <option value="pago">🟢 Pago</option>
-          <option value="rejeitado">🔴 Rejeitado</option>
-        </select>
-      </div>
-
-      <div class="form-group" id="paymentTypeGroup">
-        <label>Tipo de Pagamento <span style="color:var(--danger)">*</span></label>
-        <select id="modalPaymentType" class="form-control">
-          <option value="">Selecione...</option>
-          <option value="Pagamento">💰 Pagamento</option>
-          <option value="Operacional">⚙️ Operacional</option>
-          <option value="Mão de Obra">👷 Mão de Obra</option>
+          <option value="pendente">Pendente</option>
+          <option value="em_analise">Em Análise</option>
+          <option value="pago">Pago</option>
+          <option value="rejeitado">Rejeitado</option>
         </select>
       </div>
 
       <div class="form-group">
-        <label>Observações do Admin</label>
-        <textarea id="modalNotes" class="form-control" rows="3" placeholder="Adicione uma observação (opcional)..."></textarea>
+        <label>Tipo de Pagamento <span class="required">*</span></label>
+        <select id="modalPaymentType" class="form-control">
+          <option value="">Selecione...</option>
+          <option value="Pagamento">Pagamento</option>
+          <option value="Operacional">Operacional</option>
+          <option value="Mão de Obra">Mão de Obra</option>
+        </select>
       </div>
 
-      <!-- Upload comprovante -->
-      <div class="form-group" id="proofSection">
+      <div class="form-group">
+        <label>Observações</label>
+        <textarea id="modalNotes" class="form-control" placeholder="Adicione uma observação (opcional)..."></textarea>
+      </div>
+
+      <div class="form-group">
         <label>Comprovante de Pagamento</label>
         <div class="upload-area" id="uploadArea" onclick="document.getElementById('proofFile').click()"
           ondragover="event.preventDefault();this.classList.add('drag-over')"
           ondragleave="this.classList.remove('drag-over')"
           ondrop="handleFileDrop(event)">
           <input type="file" id="proofFile" accept="image/*,.pdf" onchange="handleFileSelect(this)">
-          <div class="upload-icon">📎</div>
-          <strong style="font-size:14px;">Clique ou arraste o comprovante</strong>
-          <p>Aceita imagens ou PDF (máx. 10MB)</p>
+          <div class="upload-icon"><i class="fa-solid fa-arrow-up-from-bracket"></i></div>
+          <strong>Clique ou arraste o comprovante</strong>
+          <p>Imagens ou PDF — máx. 10 MB</p>
         </div>
         <div id="uploadPreview"></div>
         <div id="existingProof"></div>
       </div>
 
-      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
         <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
-        <button class="btn btn-primary" onclick="saveRequest()" id="saveBtn">💾 Salvar Alterações</button>
+        <button class="btn btn-primary" onclick="saveRequest()" id="saveBtn">
+          <i class="fa-solid fa-floppy-disk"></i> Salvar
+        </button>
       </div>
     </div>
   </div>
@@ -175,11 +221,11 @@
 <script src="../js/auth-guard.js"></script>
 <script>
 let allRequests = [];
-let currentId = null;
+let currentId   = null;
 let selectedFile = null;
+let draggingId  = null;
 
-// Mostra usuário logado
-document.getElementById('userEmail').textContent = getAdminUser();
+document.getElementById('userLabel').textContent = getAdminUser();
 
 async function loadRequests() {
   const { data, error } = await supabase
@@ -187,68 +233,73 @@ async function loadRequests() {
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (error) { showToast('Erro ao carregar dados', 'error'); return; }
-
+  if (error) { showToast('Erro ao carregar dados.', 'error'); return; }
   allRequests = data || [];
   renderBoard();
   updateStats();
-  document.getElementById('lastUpdate').textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR');
+  document.getElementById('lastUpdate').textContent =
+    'Atualizado às ' + new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
 }
 
 function renderBoard() {
-  const cols = { pendente: [], em_analise: [], pago: [], rejeitado: [] };
+  const cols = { pendente:[], em_analise:[], pago:[], rejeitado:[] };
   allRequests.forEach(r => { if (cols[r.status]) cols[r.status].push(r); });
 
-  Object.entries(cols).forEach(([status, items]) => {
-    const el = document.getElementById('cards-' + status);
-    const colKey = status === 'em_analise' ? 'analise' : status;
-    document.getElementById('cnt-' + colKey).textContent = items.length;
+  const countMap = { pendente:'pendente', em_analise:'analise', pago:'pago', rejeitado:'rejeitado' };
 
+  Object.entries(cols).forEach(([status, items]) => {
+    const key = countMap[status];
+    document.getElementById('cnt-' + key).textContent = items.length;
+
+    const el = document.getElementById('cards-' + status);
     if (!items.length) {
-      el.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>Nenhuma solicitação</p></div>`;
+      el.innerHTML = `<div class="empty-state">
+        <div class="empty-icon"><i class="fa-regular fa-inbox"></i></div>
+        <p>Sem solicitações</p>
+      </div>`;
       return;
     }
-
-    el.innerHTML = items.map(r => buildCard(r)).join('');
+    el.innerHTML = items.map(buildCard).join('');
   });
 }
 
 function buildCard(r) {
-  const isUrgent = isOver20h(r.created_at) && r.status === 'pendente';
-  const tipo = r.payment_type ? `<span class="badge-tipo badge-${r.payment_type.replace(/ /g,'_')}">${r.payment_type}</span>` : '';
-  const urgentDot = isUrgent ? '<div class="urgent-indicator" title="Resposta urgente!"></div>' : '';
+  const urgent = isUrgent(r);
+  const tipo = r.payment_type
+    ? `<span class="badge-tipo badge-${r.payment_type.replace(/ /g,'_')}">${r.payment_type}</span>`
+    : '';
 
   return `
     <div class="kanban-card" draggable="true"
       ondragstart="onDragStart(event,'${r.id}')"
       ondragend="onDragEnd(event)"
       onclick="openModal('${r.id}')">
-      ${urgentDot}
-      <div class="card-name">${escHtml(r.name)}</div>
-      <div class="card-value">R$ ${fmtMoney(r.value)}</div>
+      ${urgent ? '<span class="urgent-dot" title="Resposta urgente!"></span>' : ''}
+      <div class="card-header-row">
+        <div class="card-name">${esc(r.name)}</div>
+        <div class="card-value">R$ ${money(r.value)}</div>
+      </div>
       ${tipo}
       <div class="card-meta">
-        <span>📍 ${escHtml(r.city)}</span>
-        <span>🕐 ${timeAgo(r.created_at)}</span>
+        <div class="card-meta-item">
+          <i class="fa-solid fa-location-dot"></i> ${esc(r.city)}
+        </div>
+        <div class="card-meta-item">
+          <i class="fa-regular fa-clock"></i> ${timeAgo(r.created_at)}
+        </div>
       </div>
-      ${r.protocol ? `<div style="font-size:11px;color:#CBD5E1;margin-top:4px;">#${r.protocol}</div>` : ''}
+      ${r.protocol ? `<div class="card-footer"><span class="card-protocol">${r.protocol}</span></div>` : ''}
     </div>`;
 }
 
 function updateStats() {
-  ['pendente','em_analise','pago','rejeitado'].forEach(s => {
-    const key = s === 'em_analise' ? 'statAnalise' : 'stat' + s.charAt(0).toUpperCase() + s.slice(1);
-    const el = document.getElementById(key) || document.getElementById('stat' + s.replace('_',''));
-    const count = allRequests.filter(r => r.status === s).length;
-    if (el) el.textContent = count;
-  });
   document.getElementById('statPendente').textContent  = allRequests.filter(r=>r.status==='pendente').length;
   document.getElementById('statAnalise').textContent   = allRequests.filter(r=>r.status==='em_analise').length;
   document.getElementById('statPago').textContent      = allRequests.filter(r=>r.status==='pago').length;
   document.getElementById('statRejeitado').textContent = allRequests.filter(r=>r.status==='rejeitado').length;
 }
 
-// ---- MODAL ----
+// ── Modal ──
 function openModal(id) {
   const r = allRequests.find(x => x.id === id);
   if (!r) return;
@@ -256,211 +307,126 @@ function openModal(id) {
   selectedFile = null;
 
   document.getElementById('modalInfo').innerHTML = `
-    <div class="info-item"><label>Nome</label><p>${escHtml(r.name)}</p></div>
-    <div class="info-item"><label>Cidade</label><p>${escHtml(r.city)}</p></div>
-    <div class="info-item"><label>Chave Pix</label><p>${escHtml(r.pix_key)}</p></div>
-    <div class="info-item"><label>Valor</label><p style="font-weight:700;color:var(--primary)">R$ ${fmtMoney(r.value)}</p></div>
-    <div class="info-item" style="grid-column:1/-1"><label>Motivo</label><p>${escHtml(r.reason)}</p></div>
-    <div class="info-item"><label>Criado em</label><p>${fmtDate(r.created_at)}</p></div>
-    ${r.protocol ? `<div class="info-item"><label>Protocolo</label><p>#${r.protocol}</p></div>` : ''}
+    <div class="info-item"><label>Nome</label><p>${esc(r.name)}</p></div>
+    <div class="info-item"><label>Cidade</label><p>${esc(r.city)}</p></div>
+    <div class="info-item"><label>Chave Pix</label><p>${esc(r.pix_key)}</p></div>
+    <div class="info-item"><label>Valor</label><p style="color:var(--primary);font-weight:700;">R$ ${money(r.value)}</p></div>
+    <div class="info-item" style="grid-column:1/-1"><label>Motivo</label><p>${esc(r.reason)}</p></div>
+    <div class="info-item"><label>Criado em</label><p>${date(r.created_at)}</p></div>
+    ${r.protocol ? `<div class="info-item"><label>Protocolo</label><p>${r.protocol}</p></div>` : ''}
   `;
 
   document.getElementById('modalStatus').value      = r.status;
   document.getElementById('modalPaymentType').value = r.payment_type || '';
   document.getElementById('modalNotes').value       = r.admin_notes || '';
-
-  // Comprovante existente
-  const ep = document.getElementById('existingProof');
-  ep.innerHTML = r.proof_url
-    ? `<div style="margin-top:10px;"><a href="${r.proof_url}" target="_blank" class="btn btn-ghost btn-sm">📎 Ver comprovante atual</a></div>`
-    : '';
-
   document.getElementById('uploadPreview').innerHTML = '';
   document.getElementById('proofFile').value = '';
+  document.getElementById('existingProof').innerHTML = r.proof_url
+    ? `<div style="margin-top:10px;"><a href="${r.proof_url}" target="_blank" class="btn btn-ghost btn-sm"><i class="fa-solid fa-paperclip"></i> Ver comprovante atual</a></div>`
+    : '';
 
   document.getElementById('modalOverlay').classList.add('open');
 }
 
-function closeModal() {
-  document.getElementById('modalOverlay').classList.remove('open');
-  currentId = null;
-  selectedFile = null;
-}
-
-function closeModalOutside(e) {
-  if (e.target === document.getElementById('modalOverlay')) closeModal();
-}
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); currentId = null; selectedFile = null; }
+function closeModalOutside(e) { if (e.target.id === 'modalOverlay') closeModal(); }
 
 async function saveRequest() {
   if (!currentId) return;
-  const btn = document.getElementById('saveBtn');
   const status      = document.getElementById('modalStatus').value;
   const paymentType = document.getElementById('modalPaymentType').value;
   const notes       = document.getElementById('modalNotes').value.trim();
+  const btn         = document.getElementById('saveBtn');
 
   if (status === 'pago' && !paymentType) {
-    showToast('Selecione o tipo de pagamento antes de marcar como Pago.', 'warning');
-    return;
+    showToast('Selecione o tipo de pagamento.', 'warning'); return;
   }
 
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Salvando...';
 
   let proof_url = null;
-
-  // Upload do comprovante se houver
   if (selectedFile) {
-    const ext  = selectedFile.name.split('.').pop();
-    const path = `${currentId}/${Date.now()}.${ext}`;
-    const { data: upData, error: upErr } = await supabase.storage
-      .from('comprovantes')
-      .upload(path, selectedFile, { upsert: true });
-
-    if (upErr) {
-      showToast('Erro ao enviar comprovante.', 'error');
-      btn.disabled = false;
-      btn.innerHTML = '💾 Salvar Alterações';
-      return;
-    }
-
-    const { data: urlData } = supabase.storage.from('comprovantes').getPublicUrl(path);
-    proof_url = urlData.publicUrl;
+    const path = `${currentId}/${Date.now()}.${selectedFile.name.split('.').pop()}`;
+    const { error: upErr } = await supabase.storage.from('comprovantes').upload(path, selectedFile, { upsert: true });
+    if (upErr) { showToast('Erro ao enviar comprovante.', 'error'); btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Salvar'; return; }
+    const { data: u } = supabase.storage.from('comprovantes').getPublicUrl(path);
+    proof_url = u.publicUrl;
   }
 
   const payload = {
     status,
-    payment_type:  paymentType || null,
-    admin_notes:   notes || null,
-    responded_at:  ['pago','rejeitado'].includes(status) ? new Date().toISOString() : null,
+    payment_type: paymentType || null,
+    admin_notes:  notes || null,
+    responded_at: ['pago','rejeitado'].includes(status) ? new Date().toISOString() : null,
   };
   if (proof_url) payload.proof_url = proof_url;
 
-  const { error } = await supabase
-    .from('payment_requests')
-    .update(payload)
-    .eq('id', currentId);
+  const { error } = await supabase.from('payment_requests').update(payload).eq('id', currentId);
 
-  if (error) {
-    showToast('Erro ao salvar.', 'error');
-  } else {
-    showToast('Solicitação atualizada!', 'success');
-    closeModal();
-    loadRequests();
-  }
+  if (error) { showToast('Erro ao salvar.', 'error'); }
+  else { showToast('Salvo com sucesso!', 'success'); closeModal(); loadRequests(); }
 
   btn.disabled = false;
-  btn.innerHTML = '💾 Salvar Alterações';
+  btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Salvar';
 }
 
-// ---- DRAG & DROP ----
-let draggingId = null;
-
-function onDragStart(e, id) {
-  draggingId = id;
-  e.currentTarget.classList.add('dragging');
-  e.dataTransfer.effectAllowed = 'move';
-}
-
-function onDragEnd(e) {
-  e.currentTarget.classList.remove('dragging');
-}
-
-function onDragOver(e, status) {
-  e.preventDefault();
-  document.getElementById('cards-' + status).classList.add('drag-over');
-}
-
-function onDragLeave(e) {
-  e.currentTarget.classList.remove('drag-over');
-}
+// ── Drag & Drop ──
+function onDragStart(e, id) { draggingId = id; e.currentTarget.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; }
+function onDragEnd(e)       { e.currentTarget.classList.remove('dragging'); }
+function onDragOver(e, s)   { e.preventDefault(); document.getElementById('cards-' + s).classList.add('drag-over'); }
+function onDragLeave(e)     { e.currentTarget.classList.remove('drag-over'); }
 
 async function onDrop(e, status) {
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
   if (!draggingId) return;
-
   const r = allRequests.find(x => x.id === draggingId);
   if (!r || r.status === status) return;
 
   if (status === 'pago' && !r.payment_type) {
-    currentId = draggingId;
-    document.getElementById('modalStatus').value = 'pago';
     openModal(draggingId);
-    showToast('Selecione o tipo de pagamento e confirme.', 'warning');
+    document.getElementById('modalStatus').value = 'pago';
+    showToast('Selecione o tipo de pagamento antes de confirmar.', 'warning');
     return;
   }
 
-  const { error } = await supabase
-    .from('payment_requests')
+  const { error } = await supabase.from('payment_requests')
     .update({ status, responded_at: ['pago','rejeitado'].includes(status) ? new Date().toISOString() : null })
     .eq('id', draggingId);
 
-  if (!error) { loadRequests(); showToast('Status atualizado!', 'success'); }
+  if (!error) { showToast('Status atualizado.', 'success'); loadRequests(); }
   draggingId = null;
 }
 
-// ---- FILE UPLOAD ----
-function handleFileSelect(input) {
-  if (input.files[0]) setSelectedFile(input.files[0]);
+// ── Upload ──
+function handleFileSelect(i) { if (i.files[0]) setFile(i.files[0]); }
+function handleFileDrop(e)   { e.preventDefault(); document.getElementById('uploadArea').classList.remove('drag-over'); if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); }
+
+function setFile(f) {
+  if (f.size > 10*1024*1024) { showToast('Arquivo muito grande (máx. 10 MB).', 'error'); return; }
+  selectedFile = f;
+  document.getElementById('uploadPreview').innerHTML =
+    `<div class="upload-preview"><i class="fa-solid fa-paperclip"></i><span>${esc(f.name)}</span><button class="btn btn-ghost btn-sm" onclick="clearFile()"><i class="fa-solid fa-xmark"></i></button></div>`;
 }
 
-function handleFileDrop(e) {
-  e.preventDefault();
-  document.getElementById('uploadArea').classList.remove('drag-over');
-  if (e.dataTransfer.files[0]) setSelectedFile(e.dataTransfer.files[0]);
-}
+function clearFile() { selectedFile = null; document.getElementById('uploadPreview').innerHTML = ''; document.getElementById('proofFile').value = ''; }
 
-function setSelectedFile(file) {
-  if (file.size > 10 * 1024 * 1024) { showToast('Arquivo muito grande (máx. 10MB)', 'error'); return; }
-  selectedFile = file;
-  document.getElementById('uploadPreview').innerHTML = `
-    <div class="uploaded-preview">
-      📎 <span>${escHtml(file.name)}</span>
-      <button class="btn btn-ghost btn-sm" onclick="clearFile()">✕</button>
-    </div>`;
-}
+// ── Utils ──
+function isUrgent(r) { return r.status === 'pendente' && (Date.now() - new Date(r.created_at)) > 20*3600000; }
+function money(v)    { return parseFloat(v).toLocaleString('pt-BR', { minimumFractionDigits:2 }); }
+function date(d)     { return new Date(d).toLocaleString('pt-BR', { dateStyle:'short', timeStyle:'short' }); }
+function timeAgo(d)  { const m=Math.floor((Date.now()-new Date(d))/60000); if(m<1)return'agora'; if(m<60)return m+'min'; if(m<1440)return Math.floor(m/60)+'h'; return Math.floor(m/1440)+'d'; }
+function esc(s)      { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-function clearFile() {
-  selectedFile = null;
-  document.getElementById('uploadPreview').innerHTML = '';
-  document.getElementById('proofFile').value = '';
-}
-
-// ---- UTILS ----
-function fmtMoney(v) {
-  return parseFloat(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-}
-
-function fmtDate(d) {
-  return new Date(d).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-}
-
-function timeAgo(d) {
-  const diff = Math.floor((Date.now() - new Date(d)) / 60000);
-  if (diff < 1)   return 'agora';
-  if (diff < 60)  return `${diff}min atrás`;
-  if (diff < 1440) return `${Math.floor(diff/60)}h atrás`;
-  return `${Math.floor(diff/1440)}d atrás`;
-}
-
-function isOver20h(d) {
-  return (Date.now() - new Date(d)) > 20 * 3600000;
-}
-
-function escHtml(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function showToast(msg, type = '') {
+function showToast(msg, type='') {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.className = `toast show ${type}`;
   setTimeout(() => t.className = 'toast', 3500);
 }
 
-// Realtime updates
-supabase.channel('payment_requests').on('postgres_changes', { event: '*', schema: 'public', table: 'payment_requests' }, () => loadRequests()).subscribe();
-
+supabase.channel('kanban').on('postgres_changes',{event:'*',schema:'public',table:'payment_requests'},()=>loadRequests()).subscribe();
 loadRequests();
 </script>
 </body>

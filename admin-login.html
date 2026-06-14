@@ -3,18 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login Administrativo · FinanceiroPro</title>
+  <title>Login · FinanceiroPro</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <div class="login-page">
-    <div style="width:100%;max-width:400px;">
-      <a href="index.html" class="back-link" style="justify-content:center;margin-bottom:24px;">← Voltar ao início</a>
+    <div style="width:100%;max-width:380px;">
+      <a href="index.html" class="back-link" style="justify-content:center;display:flex;margin-bottom:20px;">
+        <i class="fa-solid fa-arrow-left"></i> Voltar ao início
+      </a>
 
       <div class="login-card">
-        <div class="logo">
-          <div class="icon">🔐</div>
+        <div class="login-header">
+          <div class="login-icon">
+            <i class="fa-solid fa-lock"></i>
+          </div>
           <h2>Área Administrativa</h2>
           <p>Acesso restrito a gestores</p>
         </div>
@@ -30,13 +35,13 @@
             <input type="password" id="password" class="form-control" placeholder="••••••••" required>
           </div>
 
-          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:14px;margin-top:8px;" id="loginBtn">
+          <button type="submit" class="btn btn-primary btn-lg" style="width:100%;justify-content:center;margin-top:6px;" id="loginBtn">
             Entrar
           </button>
         </form>
 
         <p style="text-align:center;font-size:12px;color:#94A3B8;margin-top:20px;">
-          Problemas de acesso? Contate o administrador do sistema.
+          Problemas de acesso? Contate o administrador.
         </p>
       </div>
     </div>
@@ -46,7 +51,6 @@
 
   <script src="js/config.js"></script>
   <script>
-    // Redireciona se já logado
     if (localStorage.getItem('admin_session')) {
       window.location.href = 'admin/kanban.html';
     }
@@ -58,7 +62,7 @@
       setTimeout(() => t.className = 'toast', 3500);
     }
 
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    document.getElementById('loginForm').addEventListener('submit', async e => {
       e.preventDefault();
       const btn = document.getElementById('loginBtn');
       btn.disabled = true;
@@ -66,35 +70,29 @@
 
       const reset = () => { btn.disabled = false; btn.textContent = 'Entrar'; };
 
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value;
-
       try {
         const { data, error } = await supabase
           .from('admins')
           .select('username')
-          .eq('username', username)
-          .eq('password', password)
+          .eq('username', document.getElementById('username').value.trim())
+          .eq('password', document.getElementById('password').value)
           .maybeSingle();
 
         if (error) {
           console.error('Supabase error:', error);
           showToast('Erro ao conectar com o banco de dados.', 'error');
-          reset();
-          return;
+          reset(); return;
         }
 
         if (!data) {
           showToast('Usuário ou senha incorretos.', 'error');
-          reset();
-          return;
+          reset(); return;
         }
 
         localStorage.setItem('admin_session', data.username);
         window.location.href = 'admin/kanban.html';
-
       } catch (err) {
-        console.error('Exceção no login:', err);
+        console.error('Exceção:', err);
         showToast('Erro inesperado. Verifique o console.', 'error');
         reset();
       }
