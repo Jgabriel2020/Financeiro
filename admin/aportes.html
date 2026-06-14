@@ -10,16 +10,18 @@
 </head>
 <body>
 
-<aside class="sidebar">
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
     <div class="brand-icon"><i class="fa-solid fa-chart-line"></i></div>
     <div class="brand-text"><strong>FinanceiroPro</strong><span>Painel Admin</span></div>
   </div>
   <nav>
     <div class="nav-section">Menu</div>
-    <a href="kanban.html" class="nav-item"><i class="fa-solid fa-table-columns"></i> Kanban</a>
-    <a href="relatorios.html" class="nav-item"><i class="fa-solid fa-chart-bar"></i> Relatórios</a>
-    <a href="aportes.html" class="nav-item active"><i class="fa-solid fa-building"></i> Aportes de Obras</a>
+    <a href="kanban.html"    class="nav-item" onclick="closeSidebar()"><i class="fa-solid fa-table-columns"></i> Kanban</a>
+    <a href="relatorios.html" class="nav-item" onclick="closeSidebar()"><i class="fa-solid fa-chart-bar"></i> Relatórios</a>
+    <a href="aportes.html"   class="nav-item active" onclick="closeSidebar()"><i class="fa-solid fa-building"></i> Aportes de Obras</a>
   </nav>
   <div class="sidebar-footer">
     <div class="sidebar-user">
@@ -34,15 +36,19 @@
 
 <div class="main">
   <div class="topbar">
-    <div class="topbar-left"><h2>Aportes de Obras</h2></div>
+    <div class="topbar-left" style="display:flex;align-items:center;gap:10px;">
+      <button class="hamburger" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+      <h2>Aportes de Obras</h2>
+    </div>
     <div class="topbar-right">
       <button class="btn btn-primary btn-sm" onclick="openModal()">
-        <i class="fa-solid fa-plus"></i> Novo Aporte
+        <i class="fa-solid fa-plus"></i> <span class="hide-mobile">Novo</span> Aporte
       </button>
     </div>
   </div>
 
   <div class="page-body">
+
     <div class="filters-bar">
       <div class="form-group">
         <label>Estado</label>
@@ -79,6 +85,7 @@
     <div class="aportes-grid" id="aportesGrid">
       <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">Carregando...</div>
     </div>
+
   </div>
 </div>
 
@@ -94,7 +101,6 @@
         <label>Nome da Obra <span class="required">*</span></label>
         <input type="text" id="workName" class="form-control" placeholder="Ex: Obra Rua das Flores, 123">
       </div>
-
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="form-group">
           <label>Estado</label>
@@ -109,7 +115,6 @@
           </select>
         </div>
       </div>
-
       <div class="form-group">
         <label>Descrição</label>
         <textarea id="description" class="form-control" placeholder="Descreva o aporte realizado..."></textarea>
@@ -120,7 +125,8 @@
       </div>
       <div class="form-group">
         <label>Anexo / Documento</label>
-        <div class="upload-area" id="uploadArea" onclick="document.getElementById('aportFile').click()"
+        <div class="upload-area" id="uploadArea"
+          onclick="document.getElementById('aportFile').click()"
           ondragover="event.preventDefault();this.classList.add('drag-over')"
           ondragleave="this.classList.remove('drag-over')"
           ondrop="handleFileDrop(event)">
@@ -158,36 +164,43 @@
 <script src="../js/auth-guard.js"></script>
 <script src="../js/ibge.js"></script>
 <script>
-let allAportes   = [];
-let filtered     = [];
-let selectedFile = null;
+let allAportes = [], filtered = [], selectedFile = null;
 
 document.getElementById('userLabel').textContent = getAdminUser();
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+}
 
 // Carrega estados no filtro
 (async () => {
   const sel = document.getElementById('fState');
-  sel.innerHTML = '<option value="">Todos os estados</option>';
-  sel.disabled = false;
   try {
-    const res   = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome');
-    const data  = await res.json();
+    const res  = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome');
+    const data = await res.json();
     data.forEach(s => sel.appendChild(new Option(`${s.nome} (${s.sigla})`, s.sigla)));
-  } catch { /* silencioso */ }
+    sel.disabled = false;
+  } catch { sel.disabled = false; }
 })();
 
 async function onFilterStateChange() {
-  const uf    = document.getElementById('fState').value;
-  const cSel  = document.getElementById('fCity');
+  const uf   = document.getElementById('fState').value;
+  const cSel = document.getElementById('fCity');
   cSel.innerHTML = '<option value="">Todas as cidades</option>';
   cSel.disabled  = true;
-  if (!uf) { applyFilter(); return; }
-  try {
-    const res  = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios?orderBy=nome`);
-    const data = await res.json();
-    data.forEach(c => cSel.appendChild(new Option(c.nome, c.nome)));
-    cSel.disabled = false;
-  } catch { cSel.disabled = false; }
+  if (uf) {
+    try {
+      const res  = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios?orderBy=nome`);
+      const data = await res.json();
+      data.forEach(c => cSel.appendChild(new Option(c.nome, c.nome)));
+      cSel.disabled = false;
+    } catch { cSel.disabled = false; }
+  }
   applyFilter();
 }
 
@@ -202,21 +215,20 @@ async function loadAportes() {
 }
 
 function applyFilter() {
-  const fObra    = document.getElementById('fObra').value.toLowerCase().trim();
-  const fState   = document.getElementById('fState').value;
-  const fCity    = document.getElementById('fCity').value;
-  const fDataIni = document.getElementById('fDataIni').value;
-  const fDataFim = document.getElementById('fDataFim').value;
+  const fObra  = document.getElementById('fObra').value.toLowerCase().trim();
+  const fState = document.getElementById('fState').value;
+  const fCity  = document.getElementById('fCity').value;
+  const fIni   = document.getElementById('fDataIni').value;
+  const fFim   = document.getElementById('fDataFim').value;
 
   filtered = allAportes.filter(a => {
-    if (fObra    && !a.work_name.toLowerCase().includes(fObra)) return false;
-    if (fState   && a.state !== fState) return false;
-    if (fCity    && a.city  !== fCity)  return false;
-    if (fDataIni && new Date(a.created_at) < new Date(fDataIni)) return false;
-    if (fDataFim && new Date(a.created_at) > new Date(fDataFim + 'T23:59:59')) return false;
+    if (fObra  && !a.work_name.toLowerCase().includes(fObra)) return false;
+    if (fState && a.state !== fState) return false;
+    if (fCity  && a.city  !== fCity)  return false;
+    if (fIni && new Date(a.created_at) < new Date(fIni)) return false;
+    if (fFim && new Date(a.created_at) > new Date(fFim + 'T23:59:59')) return false;
     return true;
   });
-
   renderGrid();
   renderSummary();
 }
@@ -230,40 +242,29 @@ function clearFilter() {
 }
 
 function renderSummary() {
-  const total = filtered.reduce((s, a) => s + parseFloat(a.amount || 0), 0);
+  const total = filtered.reduce((s,a) => s + parseFloat(a.amount||0), 0);
   document.getElementById('summaryCards').innerHTML = `
-    <div class="summary-card">
-      <div class="s-label">Total de Aportes</div>
-      <div class="s-value">${filtered.length}</div>
-    </div>
-    <div class="summary-card">
-      <div class="s-label">Valor Total</div>
-      <div class="s-value" style="color:var(--success)">R$ ${money(total)}</div>
-    </div>
-    <div class="summary-card">
-      <div class="s-label">Com Anexo</div>
-      <div class="s-value">${filtered.filter(a => a.attachment_url).length}</div>
-    </div>`;
+    <div class="summary-card"><div class="s-label">Total de Aportes</div><div class="s-value">${filtered.length}</div></div>
+    <div class="summary-card"><div class="s-label">Valor Total</div><div class="s-value" style="color:var(--success)">R$ ${money(total)}</div></div>
+    <div class="summary-card"><div class="s-label">Com Anexo</div><div class="s-value">${filtered.filter(a=>a.attachment_url).length}</div></div>`;
 }
 
 function renderGrid() {
   const grid = document.getElementById('aportesGrid');
   if (!filtered.length) {
-    grid.innerHTML = `<div style="grid-column:1/-1">
-      <div class="empty-state">
-        <div class="empty-icon"><i class="fa-solid fa-building"></i></div>
-        <h4>Nenhum aporte cadastrado</h4>
-        <p>Clique em "Novo Aporte" para começar</p>
-      </div></div>`;
+    grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state">
+      <div class="empty-icon"><i class="fa-solid fa-building"></i></div>
+      <h4>Nenhum aporte cadastrado</h4>
+      <p>Clique em "Novo Aporte" para começar</p>
+    </div></div>`;
     return;
   }
-
   grid.innerHTML = filtered.map(a => `
     <div class="aporte-card">
       <div class="aporte-card-header">
         <div>
           <div class="aporte-name">${esc(a.work_name)}</div>
-          ${a.state || a.city ? `<div class="aporte-desc"><i class="fa-solid fa-location-dot" style="font-size:10px;margin-right:3px;"></i>${[a.city, a.state].filter(Boolean).join(' — ')}</div>` : ''}
+          ${a.state||a.city ? `<div class="aporte-desc"><i class="fa-solid fa-location-dot" style="font-size:10px;margin-right:3px;"></i>${[a.city,a.state].filter(Boolean).join(' — ')}</div>` : ''}
         </div>
         <div class="aporte-icon"><i class="fa-solid fa-building"></i></div>
       </div>
@@ -271,7 +272,7 @@ function renderGrid() {
       ${a.amount ? `<div class="aporte-amount">R$ ${money(a.amount)}</div>` : ''}
       ${a.attachment_url
         ? `<a href="${a.attachment_url}" target="_blank" class="aporte-attachment">
-             <i class="fa-solid fa-paperclip"></i> ${esc(a.attachment_name || 'Ver Anexo')}
+             <i class="fa-solid fa-paperclip"></i> ${esc(a.attachment_name||'Ver Anexo')}
            </a>` : ''}
       <div class="aporte-date"><i class="fa-regular fa-calendar"></i> ${date(a.created_at)}</div>
       <div class="aporte-actions">
@@ -285,7 +286,6 @@ function renderGrid() {
     </div>`).join('');
 }
 
-// ── Modal novo ──
 function openModal() {
   selectedFile = null;
   ['workName','description','amount'].forEach(id => document.getElementById(id).value = '');
@@ -294,7 +294,6 @@ function openModal() {
   setupStateCityPair('mState', 'mCity');
   document.getElementById('modalOverlay').classList.add('open');
 }
-
 function closeModal()         { document.getElementById('modalOverlay').classList.remove('open'); }
 function closeModalOutside(e) { if (e.target.id === 'modalOverlay') closeModal(); }
 
@@ -306,18 +305,17 @@ async function saveAporte() {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Salvando...';
 
-  const amount = parseFloat(document.getElementById('amount').value.replace(',', '.')) || null;
+  const amount = parseFloat(document.getElementById('amount').value.replace(',','.')) || null;
   const state  = document.getElementById('mState').value || null;
   const city   = document.getElementById('mCity').value  || null;
 
   let attachment_url = null, attachment_name = null;
   if (selectedFile) {
     const path = `${Date.now()}_${selectedFile.name}`;
-    const { error: upErr } = await supabase.storage.from('aportes').upload(path, selectedFile, { upsert: true });
+    const { error: upErr } = await supabase.storage.from('aportes').upload(path, selectedFile, { upsert:true });
     if (upErr) {
       showToast('Erro ao enviar arquivo.', 'error');
-      btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Salvar';
-      return;
+      btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Salvar'; return;
     }
     const { data: u } = supabase.storage.from('aportes').getPublicUrl(path);
     attachment_url  = u.publicUrl;
@@ -325,16 +323,14 @@ async function saveAporte() {
   }
 
   const { error } = await supabase.from('work_contributions').insert({
-    work_name:   workName,
+    work_name: workName,
     description: document.getElementById('description').value.trim() || null,
     amount, state, city, attachment_url, attachment_name
   });
 
   if (error) { showToast('Erro ao salvar aporte.', 'error'); }
   else { showToast('Aporte salvo!', 'success'); closeModal(); loadAportes(); }
-
-  btn.disabled = false;
-  btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Salvar';
+  btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Salvar';
 }
 
 async function deleteAporte(id, name) {
@@ -354,18 +350,15 @@ function viewAporte(id) {
       <div class="info-item"><label>Obra</label><p>${esc(a.work_name)}</p></div>
       ${a.amount ? `<div class="info-item"><label>Valor</label><p style="color:var(--success);font-weight:700;">R$ ${money(a.amount)}</p></div>` : ''}
       ${a.state  ? `<div class="info-item"><label>Estado</label><p>${esc(a.state)}</p></div>` : ''}
-      ${a.city   ? `<div class="info-item"><label>Cidade</label><p>${esc(a.city)}</p></div>` : ''}
+      ${a.city   ? `<div class="info-item"><label>Cidade</label><p>${esc(a.city)}</p></div>`  : ''}
       <div class="info-item"><label>Data</label><p>${date(a.created_at)}</p></div>
       ${a.description ? `<div class="info-item" style="grid-column:1/-1"><label>Descrição</label><p>${esc(a.description)}</p></div>` : ''}
     </div>
     ${a.attachment_url
-      ? `<a href="${a.attachment_url}" target="_blank" class="btn btn-primary" style="margin-top:8px;">
-           <i class="fa-solid fa-paperclip"></i> Abrir Anexo
-         </a>`
+      ? `<a href="${a.attachment_url}" target="_blank" class="btn btn-primary" style="margin-top:8px;"><i class="fa-solid fa-paperclip"></i> Abrir Anexo</a>`
       : `<p style="font-size:13px;color:var(--muted);">Nenhum anexo vinculado.</p>`}`;
   document.getElementById('viewOverlay').classList.add('open');
 }
-
 function closeView()          { document.getElementById('viewOverlay').classList.remove('open'); }
 function closeViewOutside(e)  { if (e.target.id === 'viewOverlay') closeView(); }
 
@@ -377,21 +370,21 @@ function setFile(f) {
   document.getElementById('uploadPreview').innerHTML =
     `<div class="upload-preview"><i class="fa-solid fa-paperclip"></i><span>${esc(f.name)}</span><button class="btn btn-ghost btn-sm" onclick="clearFile()"><i class="fa-solid fa-xmark"></i></button></div>`;
 }
-function clearFile() { selectedFile = null; document.getElementById('uploadPreview').innerHTML = ''; document.getElementById('aportFile').value = ''; }
+function clearFile() { selectedFile=null; document.getElementById('uploadPreview').innerHTML=''; document.getElementById('aportFile').value=''; }
 
 document.getElementById('amount').addEventListener('input', e => {
-  let v = e.target.value.replace(/\D/g, '');
-  if (!v) { e.target.value = ''; return; }
-  e.target.value = (parseInt(v) / 100).toFixed(2).replace('.', ',');
+  let v = e.target.value.replace(/\D/g,'');
+  if (!v) { e.target.value=''; return; }
+  e.target.value = (parseInt(v)/100).toFixed(2).replace('.',',');
 });
 
-function money(v) { return parseFloat(v||0).toLocaleString('pt-BR', { minimumFractionDigits:2 }); }
-function date(d)  { return new Date(d).toLocaleString('pt-BR', { dateStyle:'short', timeStyle:'short' }); }
+function money(v) { return parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2}); }
+function date(d)  { return new Date(d).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}); }
 function esc(s)   { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function showToast(msg, type='') {
   const t = document.getElementById('toast');
-  t.textContent = msg; t.className = `toast show ${type}`;
-  setTimeout(() => t.className = 'toast', 3500);
+  t.textContent=msg; t.className=`toast show ${type}`;
+  setTimeout(()=>t.className='toast',3500);
 }
 
 loadAportes();

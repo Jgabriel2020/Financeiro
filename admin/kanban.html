@@ -10,25 +10,18 @@
 </head>
 <body>
 
-<aside class="sidebar">
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
     <div class="brand-icon"><i class="fa-solid fa-chart-line"></i></div>
-    <div class="brand-text">
-      <strong>FinanceiroPro</strong>
-      <span>Painel Admin</span>
-    </div>
+    <div class="brand-text"><strong>FinanceiroPro</strong><span>Painel Admin</span></div>
   </div>
   <nav>
     <div class="nav-section">Menu</div>
-    <a href="kanban.html" class="nav-item active">
-      <i class="fa-solid fa-table-columns"></i> Kanban
-    </a>
-    <a href="relatorios.html" class="nav-item">
-      <i class="fa-solid fa-chart-bar"></i> Relatórios
-    </a>
-    <a href="aportes.html" class="nav-item">
-      <i class="fa-solid fa-building"></i> Aportes de Obras
-    </a>
+    <a href="kanban.html" class="nav-item active" onclick="closeSidebar()"><i class="fa-solid fa-table-columns"></i> Kanban</a>
+    <a href="relatorios.html" class="nav-item" onclick="closeSidebar()"><i class="fa-solid fa-chart-bar"></i> Relatórios</a>
+    <a href="aportes.html" class="nav-item" onclick="closeSidebar()"><i class="fa-solid fa-building"></i> Aportes de Obras</a>
   </nav>
   <div class="sidebar-footer">
     <div class="sidebar-user">
@@ -43,13 +36,16 @@
 
 <div class="main">
   <div class="topbar">
-    <div class="topbar-left">
-      <h2>Solicitações de Pagamento</h2>
+    <div class="topbar-left" style="display:flex;align-items:center;gap:10px;">
+      <button class="hamburger" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+      <div>
+        <h2>Solicitações</h2>
+      </div>
     </div>
     <div class="topbar-right">
-      <span style="font-size:12px;color:var(--muted);" id="lastUpdate"></span>
+      <span style="font-size:12px;color:var(--muted);" id="lastUpdate" class="hide-mobile"></span>
       <button class="btn btn-ghost btn-sm" onclick="loadRequests()">
-        <i class="fa-solid fa-rotate-right"></i> Atualizar
+        <i class="fa-solid fa-rotate-right"></i> <span class="hide-mobile">Atualizar</span>
       </button>
     </div>
   </div>
@@ -59,43 +55,44 @@
     <!-- Stats -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-label">
-          Pendentes
-          <span class="dot" style="background:#3B82F6;"></span>
-        </div>
+        <div class="stat-label">Pendentes <span class="dot" style="background:#3B82F6;"></span></div>
         <div class="stat-value" id="statPendente">—</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">
-          Em Análise
-          <span class="dot" style="background:#F59E0B;"></span>
-        </div>
+        <div class="stat-label">Em Análise <span class="dot" style="background:#F59E0B;"></span></div>
         <div class="stat-value" id="statAnalise">—</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">
-          Pagos
-          <span class="dot" style="background:#10B981;"></span>
-        </div>
+        <div class="stat-label">Pagos <span class="dot" style="background:#10B981;"></span></div>
         <div class="stat-value" id="statPago">—</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">
-          Rejeitados
-          <span class="dot" style="background:#EF4444;"></span>
-        </div>
+        <div class="stat-label">Rejeitados <span class="dot" style="background:#EF4444;"></span></div>
         <div class="stat-value" id="statRejeitado">—</div>
       </div>
     </div>
 
-    <!-- Kanban -->
+    <!-- Abas mobile -->
+    <div class="kanban-tabs" id="kanbanTabs">
+      <button class="kanban-tab-btn active" onclick="switchKanbanTab('pendente', this)">
+        <span class="ktab-dot" style="background:#3B82F6;"></span> Pendente <span id="mtab-pendente">0</span>
+      </button>
+      <button class="kanban-tab-btn" onclick="switchKanbanTab('em_analise', this)">
+        <span class="ktab-dot" style="background:#F59E0B;"></span> Em Análise <span id="mtab-analise">0</span>
+      </button>
+      <button class="kanban-tab-btn" onclick="switchKanbanTab('pago', this)">
+        <span class="ktab-dot" style="background:#10B981;"></span> Pago <span id="mtab-pago">0</span>
+      </button>
+      <button class="kanban-tab-btn" onclick="switchKanbanTab('rejeitado', this)">
+        <span class="ktab-dot" style="background:#EF4444;"></span> Rejeitado <span id="mtab-rejeitado">0</span>
+      </button>
+    </div>
+
+    <!-- Kanban Board -->
     <div class="kanban-board">
-      <div class="kanban-col col-pendente">
+      <div class="kanban-col col-pendente mobile-active" id="kcol-pendente">
         <div class="kanban-col-header">
-          <div class="col-header-left">
-            <span class="col-dot"></span>
-            <span class="col-title">Pendente</span>
-          </div>
+          <div class="col-header-left"><span class="col-dot"></span><span class="col-title">Pendente</span></div>
           <span class="col-count" id="cnt-pendente">0</span>
         </div>
         <div class="kanban-cards" id="cards-pendente"
@@ -105,12 +102,9 @@
         </div>
       </div>
 
-      <div class="kanban-col col-analise">
+      <div class="kanban-col col-analise" id="kcol-em_analise">
         <div class="kanban-col-header">
-          <div class="col-header-left">
-            <span class="col-dot"></span>
-            <span class="col-title">Em Análise</span>
-          </div>
+          <div class="col-header-left"><span class="col-dot"></span><span class="col-title">Em Análise</span></div>
           <span class="col-count" id="cnt-analise">0</span>
         </div>
         <div class="kanban-cards" id="cards-em_analise"
@@ -120,12 +114,9 @@
         </div>
       </div>
 
-      <div class="kanban-col col-pago">
+      <div class="kanban-col col-pago" id="kcol-pago">
         <div class="kanban-col-header">
-          <div class="col-header-left">
-            <span class="col-dot"></span>
-            <span class="col-title">Pago</span>
-          </div>
+          <div class="col-header-left"><span class="col-dot"></span><span class="col-title">Pago</span></div>
           <span class="col-count" id="cnt-pago">0</span>
         </div>
         <div class="kanban-cards" id="cards-pago"
@@ -135,12 +126,9 @@
         </div>
       </div>
 
-      <div class="kanban-col col-rejeitado">
+      <div class="kanban-col col-rejeitado" id="kcol-rejeitado">
         <div class="kanban-col-header">
-          <div class="col-header-left">
-            <span class="col-dot"></span>
-            <span class="col-title">Rejeitado</span>
-          </div>
+          <div class="col-header-left"><span class="col-dot"></span><span class="col-title">Rejeitado</span></div>
           <span class="col-count" id="cnt-rejeitado">0</span>
         </div>
         <div class="kanban-cards" id="cards-rejeitado"
@@ -174,7 +162,6 @@
           <option value="rejeitado">Rejeitado</option>
         </select>
       </div>
-
       <div class="form-group">
         <label>Tipo de Pagamento <span class="required">*</span></label>
         <select id="modalPaymentType" class="form-control">
@@ -184,15 +171,14 @@
           <option value="Mão de Obra">Mão de Obra</option>
         </select>
       </div>
-
       <div class="form-group">
         <label>Observações</label>
-        <textarea id="modalNotes" class="form-control" placeholder="Adicione uma observação (opcional)..."></textarea>
+        <textarea id="modalNotes" class="form-control" placeholder="Observação (opcional)..."></textarea>
       </div>
-
       <div class="form-group">
         <label>Comprovante de Pagamento</label>
-        <div class="upload-area" id="uploadArea" onclick="document.getElementById('proofFile').click()"
+        <div class="upload-area" id="uploadArea"
+          onclick="document.getElementById('proofFile').click()"
           ondragover="event.preventDefault();this.classList.add('drag-over')"
           ondragleave="this.classList.remove('drag-over')"
           ondrop="handleFileDrop(event)">
@@ -204,7 +190,6 @@
         <div id="uploadPreview"></div>
         <div id="existingProof"></div>
       </div>
-
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
         <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
         <button class="btn btn-primary" onclick="saveRequest()" id="saveBtn">
@@ -220,19 +205,38 @@
 <script src="../js/config.js"></script>
 <script src="../js/auth-guard.js"></script>
 <script>
-let allRequests = [];
-let currentId   = null;
+let allRequests  = [];
+let currentId    = null;
 let selectedFile = null;
-let draggingId  = null;
+let draggingId   = null;
+let activeTab    = 'pendente';
 
 document.getElementById('userLabel').textContent = getAdminUser();
+
+// ── Sidebar mobile ──
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+}
+
+// ── Kanban tabs mobile ──
+function switchKanbanTab(status, btn) {
+  activeTab = status;
+  document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('mobile-active'));
+  document.getElementById('kcol-' + status).classList.add('mobile-active');
+  document.querySelectorAll('.kanban-tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
 
 async function loadRequests() {
   const { data, error } = await supabase
     .from('payment_requests')
     .select('*')
     .order('created_at', { ascending: false });
-
   if (error) { showToast('Erro ao carregar dados.', 'error'); return; }
   allRequests = data || [];
   renderBoard();
@@ -245,18 +249,19 @@ function renderBoard() {
   const cols = { pendente:[], em_analise:[], pago:[], rejeitado:[] };
   allRequests.forEach(r => { if (cols[r.status]) cols[r.status].push(r); });
 
-  const countMap = { pendente:'pendente', em_analise:'analise', pago:'pago', rejeitado:'rejeitado' };
+  const cntMap = { pendente:'pendente', em_analise:'analise', pago:'pago', rejeitado:'rejeitado' };
 
   Object.entries(cols).forEach(([status, items]) => {
-    const key = countMap[status];
-    document.getElementById('cnt-' + key).textContent = items.length;
+    document.getElementById('cnt-' + cntMap[status]).textContent = items.length;
+    // Mobile tab counts
+    const tabKey = { pendente:'pendente', em_analise:'analise', pago:'pago', rejeitado:'rejeitado' }[status];
+    document.getElementById('mtab-' + tabKey).textContent = items.length;
 
     const el = document.getElementById('cards-' + status);
     if (!items.length) {
       el.innerHTML = `<div class="empty-state">
         <div class="empty-icon"><i class="fa-regular fa-inbox"></i></div>
-        <p>Sem solicitações</p>
-      </div>`;
+        <p>Sem solicitações</p></div>`;
       return;
     }
     el.innerHTML = items.map(buildCard).join('');
@@ -265,10 +270,8 @@ function renderBoard() {
 
 function buildCard(r) {
   const urgent = isUrgent(r);
-  const tipo = r.payment_type
-    ? `<span class="badge-tipo badge-${r.payment_type.replace(/ /g,'_')}">${r.payment_type}</span>`
-    : '';
-
+  const tipo   = r.payment_type
+    ? `<span class="badge-tipo badge-${r.payment_type.replace(/ /g,'_')}">${r.payment_type}</span>` : '';
   return `
     <div class="kanban-card" draggable="true"
       ondragstart="onDragStart(event,'${r.id}')"
@@ -281,12 +284,8 @@ function buildCard(r) {
       </div>
       ${tipo}
       <div class="card-meta">
-        <div class="card-meta-item">
-          <i class="fa-solid fa-location-dot"></i> ${esc(r.city)}
-        </div>
-        <div class="card-meta-item">
-          <i class="fa-regular fa-clock"></i> ${timeAgo(r.created_at)}
-        </div>
+        <div class="card-meta-item"><i class="fa-solid fa-location-dot"></i> ${esc(r.city)}${r.state ? ' — ' + r.state : ''}</div>
+        <div class="card-meta-item"><i class="fa-regular fa-clock"></i> ${timeAgo(r.created_at)}</div>
       </div>
       ${r.protocol ? `<div class="card-footer"><span class="card-protocol">${r.protocol}</span></div>` : ''}
     </div>`;
@@ -303,27 +302,25 @@ function updateStats() {
 function openModal(id) {
   const r = allRequests.find(x => x.id === id);
   if (!r) return;
-  currentId = id;
-  selectedFile = null;
+  currentId = id; selectedFile = null;
 
   document.getElementById('modalInfo').innerHTML = `
     <div class="info-item"><label>Nome</label><p>${esc(r.name)}</p></div>
+    <div class="info-item"><label>Valor</label><p style="color:var(--primary);font-weight:700;">R$ ${money(r.value)}</p></div>
+    <div class="info-item"><label>Estado</label><p>${r.state || '—'}</p></div>
     <div class="info-item"><label>Cidade</label><p>${esc(r.city)}</p></div>
     <div class="info-item"><label>Chave Pix</label><p>${esc(r.pix_key)}</p></div>
-    <div class="info-item"><label>Valor</label><p style="color:var(--primary);font-weight:700;">R$ ${money(r.value)}</p></div>
-    <div class="info-item" style="grid-column:1/-1"><label>Motivo</label><p>${esc(r.reason)}</p></div>
     <div class="info-item"><label>Criado em</label><p>${date(r.created_at)}</p></div>
-    ${r.protocol ? `<div class="info-item"><label>Protocolo</label><p>${r.protocol}</p></div>` : ''}
-  `;
+    <div class="info-item" style="grid-column:1/-1"><label>Motivo</label><p>${esc(r.reason)}</p></div>
+    ${r.protocol ? `<div class="info-item"><label>Protocolo</label><p>${r.protocol}</p></div>` : ''}`;
 
   document.getElementById('modalStatus').value      = r.status;
   document.getElementById('modalPaymentType').value = r.payment_type || '';
-  document.getElementById('modalNotes').value       = r.admin_notes || '';
+  document.getElementById('modalNotes').value       = r.admin_notes  || '';
   document.getElementById('uploadPreview').innerHTML = '';
-  document.getElementById('proofFile').value = '';
+  document.getElementById('proofFile').value         = '';
   document.getElementById('existingProof').innerHTML = r.proof_url
-    ? `<div style="margin-top:10px;"><a href="${r.proof_url}" target="_blank" class="btn btn-ghost btn-sm"><i class="fa-solid fa-paperclip"></i> Ver comprovante atual</a></div>`
-    : '';
+    ? `<div style="margin-top:10px;"><a href="${r.proof_url}" target="_blank" class="btn btn-ghost btn-sm"><i class="fa-solid fa-paperclip"></i> Ver comprovante atual</a></div>` : '';
 
   document.getElementById('modalOverlay').classList.add('open');
 }
@@ -338,9 +335,7 @@ async function saveRequest() {
   const notes       = document.getElementById('modalNotes').value.trim();
   const btn         = document.getElementById('saveBtn');
 
-  if (status === 'pago' && !paymentType) {
-    showToast('Selecione o tipo de pagamento.', 'warning'); return;
-  }
+  if (status === 'pago' && !paymentType) { showToast('Selecione o tipo de pagamento.', 'warning'); return; }
 
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Salvando...';
@@ -349,29 +344,25 @@ async function saveRequest() {
   if (selectedFile) {
     const path = `${currentId}/${Date.now()}.${selectedFile.name.split('.').pop()}`;
     const { error: upErr } = await supabase.storage.from('comprovantes').upload(path, selectedFile, { upsert: true });
-    if (upErr) { showToast('Erro ao enviar comprovante.', 'error'); btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Salvar'; return; }
-    const { data: u } = supabase.storage.from('comprovantes').getPublicUrl(path);
-    proof_url = u.publicUrl;
+    if (upErr) {
+      showToast('Erro ao enviar comprovante.', 'error');
+      btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Salvar'; return;
+    }
+    proof_url = supabase.storage.from('comprovantes').getPublicUrl(path).data.publicUrl;
   }
 
-  const payload = {
-    status,
-    payment_type: paymentType || null,
-    admin_notes:  notes || null,
-    responded_at: ['pago','rejeitado'].includes(status) ? new Date().toISOString() : null,
-  };
+  const payload = { status, payment_type: paymentType||null, admin_notes: notes||null,
+    responded_at: ['pago','rejeitado'].includes(status) ? new Date().toISOString() : null };
   if (proof_url) payload.proof_url = proof_url;
 
   const { error } = await supabase.from('payment_requests').update(payload).eq('id', currentId);
-
   if (error) { showToast('Erro ao salvar.', 'error'); }
   else { showToast('Salvo com sucesso!', 'success'); closeModal(); loadRequests(); }
 
-  btn.disabled = false;
-  btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Salvar';
+  btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Salvar';
 }
 
-// ── Drag & Drop ──
+// ── Drag & Drop (desktop only) ──
 function onDragStart(e, id) { draggingId = id; e.currentTarget.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; }
 function onDragEnd(e)       { e.currentTarget.classList.remove('dragging'); }
 function onDragOver(e, s)   { e.preventDefault(); document.getElementById('cards-' + s).classList.add('drag-over'); }
@@ -383,33 +374,27 @@ async function onDrop(e, status) {
   if (!draggingId) return;
   const r = allRequests.find(x => x.id === draggingId);
   if (!r || r.status === status) return;
-
   if (status === 'pago' && !r.payment_type) {
     openModal(draggingId);
     document.getElementById('modalStatus').value = 'pago';
-    showToast('Selecione o tipo de pagamento antes de confirmar.', 'warning');
-    return;
+    showToast('Selecione o tipo de pagamento antes de confirmar.', 'warning'); return;
   }
-
   const { error } = await supabase.from('payment_requests')
     .update({ status, responded_at: ['pago','rejeitado'].includes(status) ? new Date().toISOString() : null })
     .eq('id', draggingId);
-
   if (!error) { showToast('Status atualizado.', 'success'); loadRequests(); }
   draggingId = null;
 }
 
 // ── Upload ──
 function handleFileSelect(i) { if (i.files[0]) setFile(i.files[0]); }
-function handleFileDrop(e)   { e.preventDefault(); document.getElementById('uploadArea').classList.remove('drag-over'); if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); }
-
+function handleFileDrop(e) { e.preventDefault(); document.getElementById('uploadArea').classList.remove('drag-over'); if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); }
 function setFile(f) {
   if (f.size > 10*1024*1024) { showToast('Arquivo muito grande (máx. 10 MB).', 'error'); return; }
   selectedFile = f;
   document.getElementById('uploadPreview').innerHTML =
     `<div class="upload-preview"><i class="fa-solid fa-paperclip"></i><span>${esc(f.name)}</span><button class="btn btn-ghost btn-sm" onclick="clearFile()"><i class="fa-solid fa-xmark"></i></button></div>`;
 }
-
 function clearFile() { selectedFile = null; document.getElementById('uploadPreview').innerHTML = ''; document.getElementById('proofFile').value = ''; }
 
 // ── Utils ──
@@ -418,11 +403,9 @@ function money(v)    { return parseFloat(v).toLocaleString('pt-BR', { minimumFra
 function date(d)     { return new Date(d).toLocaleString('pt-BR', { dateStyle:'short', timeStyle:'short' }); }
 function timeAgo(d)  { const m=Math.floor((Date.now()-new Date(d))/60000); if(m<1)return'agora'; if(m<60)return m+'min'; if(m<1440)return Math.floor(m/60)+'h'; return Math.floor(m/1440)+'d'; }
 function esc(s)      { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
 function showToast(msg, type='') {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = `toast show ${type}`;
+  t.textContent = msg; t.className = `toast show ${type}`;
   setTimeout(() => t.className = 'toast', 3500);
 }
 
