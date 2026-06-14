@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatórios · FinanceiroPro Admin</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <h1>💰 FinanceiroPro</h1>
+    <span>Painel Administrativo</span>
+  </div>
+  <nav>
+    <a href="kanban.html" class="nav-item">📋 Kanban</a>
+    <a href="relatorios.html" class="nav-item active">📊 Relatórios</a>
+    <a href="aportes.html" class="nav-item">🏗️ Aportes de Obras</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div style="color:#94A3B8;font-size:12px;margin-bottom:10px;" id="userEmail"></div>
+    <button class="btn-logout" onclick="logout()">🚪 Sair</button>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <h2>📊 Relatórios</h2>
+    <button class="btn btn-success btn-sm" onclick="exportCSV()">⬇️ Exportar CSV</button>
+  </div>
+
+  <div class="page-body">
+
+    <!-- Filtros -->
+    <div class="filters-bar">
+      <div class="form-group">
+        <label>Status</label>
+        <select id="fStatus" class="form-control" onchange="applyFilters()">
+          <option value="">Todos</option>
+          <option value="pendente">Pendente</option>
+          <option value="em_analise">Em Análise</option>
+          <option value="pago">Pago</option>
+          <option value="rejeitado">Rejeitado</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Tipo de Pagamento</label>
+        <select id="fTipo" class="form-control" onchange="applyFilters()">
+          <option value="">Todos</option>
+          <option value="Pagamento">Pagamento</option>
+          <option value="Operacional">Operacional</option>
+          <option value="Mão de Obra">Mão de Obra</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Cidade</label>
+        <input type="text" id="fCidade" class="form-control" placeholder="Filtrar por cidade..." oninput="applyFilters()">
+      </div>
+      <div class="form-group">
+        <label>Data Inicial</label>
+        <input type="date" id="fDataIni" class="form-control" onchange="applyFilters()">
+      </div>
+      <div class="form-group">
+        <label>Data Final</label>
+        <input type="date" id="fDataFim" class="form-control" onchange="applyFilters()">
+      </div>
+      <div>
+        <button class="btn btn-ghost" onclick="clearFilters()">✕ Limpar</button>
+      </div>
+    </div>
+
+    <!-- Resumo -->
+    <div class="report-summary" id="summaryCards"></div>
+
+    <!-- Tabela -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Protocolo</th>
+            <th>Nome</th>
+            <th>Cidade</th>
+            <th>Chave Pix</th>
+            <th>Valor</th>
+            <th>Tipo</th>
+            <th>Status</th>
+            <th>Criado em</th>
+            <th>Pago em</th>
+            <th>Comprovante</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="10" style="text-align:center;padding:40px;color:#94A3B8;">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:12px;font-size:13px;color:#94A3B8;" id="resultCount"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="../js/config.js"></script>
+<script src="../js/auth-guard.js"></script>
+<script>
+let allData = [];
+let filtered = [];
+
+document.getElementById('userEmail').textContent = getAdminUser();
+
+async function loadData() {
+  const { data, error } = await supabase
+    .from('payment_requests')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) { showToast('Erro ao carregar dados', 'error'); return; }
+  allData = data || [];
+  applyFilters();
+}
+
+function applyFilters() {
+  const fStatus  = document.getElementById('fStatus').value;
+  const fTipo    = document.getElementById('fTipo').value;
+  const fCidade  = document.getElementById('fCidade').value.toLowerCase().trim();
+  const fDataIni = document.getElementById('fDataIni').value;
+  const fDataFim = document.getElementById('fDataFim').value;
+
+  filtered = allData.filter(r => {
+    if (fStatus  && r.status       !== fStatus)  return false;
+    if (fTipo    && r.payment_type !== fTipo)     return false;
+    if (fCidade  && !r.city.toLowerCase().includes(fCidade)) return false;
+    if (fDataIni && new Date(r.created_at) < new Date(fDataIni)) return false;
+    if (fDataFim && new Date(r.created_at) > new Date(fDataFim + 'T23:59:59')) return false;
+    return true;
+  });
+
+  renderTable();
+  renderSummary();
+}
+
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  document.getElementById('resultCount').textContent = `${filtered.length} registro(s) encontrado(s)`;
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="icon">📭</div><h4>Nenhum resultado</h4><p>Tente ajustar os filtros</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(r => `
+    <tr>
+      <td><span style="font-size:12px;color:#94A3B8;">${r.protocol || '-'}</span></td>
+      <td><strong>${escHtml(r.name)}</strong></td>
+      <td>${escHtml(r.city)}</td>
+      <td style="font-size:13px;color:#64748B;">${escHtml(r.pix_key)}</td>
+      <td><strong style="color:var(--primary)">R$ ${fmtMoney(r.value)}</strong></td>
+      <td>${r.payment_type ? `<span class="badge-tipo badge-${r.payment_type.replace(/ /g,'_')}">${r.payment_type}</span>` : '<span style="color:#CBD5E1">-</span>'}</td>
+      <td><span class="status-badge status-${r.status}">${statusLabel(r.status)}</span></td>
+      <td style="font-size:13px;">${fmtDate(r.created_at)}</td>
+      <td style="font-size:13px;">${r.responded_at && r.status === 'pago' ? fmtDate(r.responded_at) : '-'}</td>
+      <td>${r.proof_url ? `<a href="${r.proof_url}" target="_blank" class="btn btn-ghost btn-sm">📎 Ver</a>` : '-'}</td>
+    </tr>`).join('');
+}
+
+function renderSummary() {
+  const pago = filtered.filter(r => r.status === 'pago');
+  const total = filtered.reduce((s, r) => s + parseFloat(r.value || 0), 0);
+  const totalPago = pago.reduce((s, r) => s + parseFloat(r.value || 0), 0);
+
+  const byTipo = {};
+  pago.forEach(r => {
+    if (r.payment_type) byTipo[r.payment_type] = (byTipo[r.payment_type] || 0) + parseFloat(r.value || 0);
+  });
+
+  document.getElementById('summaryCards').innerHTML = `
+    <div class="summary-card">
+      <div class="label">Total de Registros</div>
+      <div class="value">${filtered.length}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Valor Total</div>
+      <div class="value" style="color:var(--primary)">R$ ${fmtMoney(total)}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Total Pago</div>
+      <div class="value" style="color:var(--success)">R$ ${fmtMoney(totalPago)}</div>
+      <div class="sub">${pago.length} pagamento(s)</div>
+    </div>
+    ${Object.entries(byTipo).map(([tipo, val]) => `
+      <div class="summary-card">
+        <div class="label">${tipo}</div>
+        <div class="value" style="font-size:18px;">R$ ${fmtMoney(val)}</div>
+      </div>`).join('')}
+  `;
+}
+
+function clearFilters() {
+  ['fStatus','fTipo','fCidade','fDataIni','fDataFim'].forEach(id => document.getElementById(id).value = '');
+  applyFilters();
+}
+
+function exportCSV() {
+  if (!filtered.length) { showToast('Nenhum dado para exportar', 'warning'); return; }
+
+  const headers = ['Protocolo','Nome','Cidade','Chave Pix','Valor','Motivo','Tipo','Status','Criado em','Pago em'];
+  const rows = filtered.map(r => [
+    r.protocol || '',
+    r.name, r.city, r.pix_key,
+    fmtMoney(r.value),
+    r.reason,
+    r.payment_type || '',
+    statusLabel(r.status),
+    fmtDate(r.created_at),
+    r.responded_at && r.status === 'pago' ? fmtDate(r.responded_at) : ''
+  ].map(v => `"${String(v).replace(/"/g,'""')}"`));
+
+  const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `relatorio_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV exportado com sucesso!', 'success');
+}
+
+function statusLabel(s) {
+  const map = { pendente:'Pendente', em_analise:'Em Análise', pago:'Pago', rejeitado:'Rejeitado' };
+  return map[s] || s;
+}
+
+function fmtMoney(v) {
+  return parseFloat(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+}
+
+function fmtDate(d) {
+  return new Date(d).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast show ${type}`;
+  setTimeout(() => t.className = 'toast', 3500);
+}
+
+loadData();
+</script>
+</body>
+</html>

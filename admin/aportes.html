@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aportes de Obras · FinanceiroPro Admin</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <h1>💰 FinanceiroPro</h1>
+    <span>Painel Administrativo</span>
+  </div>
+  <nav>
+    <a href="kanban.html" class="nav-item">📋 Kanban</a>
+    <a href="relatorios.html" class="nav-item">📊 Relatórios</a>
+    <a href="aportes.html" class="nav-item active">🏗️ Aportes de Obras</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div style="color:#94A3B8;font-size:12px;margin-bottom:10px;" id="userEmail"></div>
+    <button class="btn-logout" onclick="logout()">🚪 Sair</button>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <h2>🏗️ Aportes de Obras</h2>
+    <button class="btn btn-primary" onclick="openModal()">+ Novo Aporte</button>
+  </div>
+
+  <div class="page-body">
+
+    <!-- Filtro rápido -->
+    <div class="filters-bar" style="margin-bottom:20px;">
+      <div class="form-group">
+        <label>Buscar por obra</label>
+        <input type="text" id="fObra" class="form-control" placeholder="Nome da obra..." oninput="applyFilter()">
+      </div>
+      <div class="form-group">
+        <label>Data Inicial</label>
+        <input type="date" id="fDataIni" class="form-control" onchange="applyFilter()">
+      </div>
+      <div class="form-group">
+        <label>Data Final</label>
+        <input type="date" id="fDataFim" class="form-control" onchange="applyFilter()">
+      </div>
+      <div>
+        <button class="btn btn-ghost" onclick="clearFilter()">✕ Limpar</button>
+      </div>
+    </div>
+
+    <!-- Resumo total -->
+    <div class="report-summary" id="summaryCards" style="margin-bottom:20px;"></div>
+
+    <!-- Grid de cards -->
+    <div class="aportes-grid" id="aportesGrid">
+      <div style="grid-column:1/-1;text-align:center;padding:40px;color:#94A3B8;">Carregando...</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOVO APORTE -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">Novo Aporte</h3>
+      <button class="btn-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="form-group">
+        <label>Nome da Obra <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="workName" class="form-control" placeholder="Ex: Obra Rua das Flores, 123">
+      </div>
+
+      <div class="form-group">
+        <label>Descrição</label>
+        <textarea id="description" class="form-control" rows="3" placeholder="Descreva o aporte realizado..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Valor do Aporte (R$)</label>
+        <input type="text" id="amount" class="form-control" placeholder="0,00">
+      </div>
+
+      <div class="form-group">
+        <label>Anexo / Documento</label>
+        <div class="upload-area" id="uploadArea" onclick="document.getElementById('aportFile').click()"
+          ondragover="event.preventDefault();this.classList.add('drag-over')"
+          ondragleave="this.classList.remove('drag-over')"
+          ondrop="handleFileDrop(event)">
+          <input type="file" id="aportFile" accept="image/*,.pdf,.xlsx,.xls,.docx" onchange="handleFileSelect(this)">
+          <div class="upload-icon">📎</div>
+          <strong style="font-size:14px;">Clique ou arraste o arquivo</strong>
+          <p>Imagens, PDF, Excel, Word (máx. 20MB)</p>
+        </div>
+        <div id="uploadPreview"></div>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveAporte()" id="saveBtn">💾 Salvar Aporte</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VISUALIZAR -->
+<div class="modal-overlay" id="viewOverlay" onclick="closeViewOutside(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="viewTitle">Detalhes do Aporte</h3>
+      <button class="btn-close" onclick="closeView()">✕</button>
+    </div>
+    <div class="modal-body" id="viewBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="../js/config.js"></script>
+<script src="../js/auth-guard.js"></script>
+<script>
+let allAportes = [];
+let filtered   = [];
+let selectedFile = null;
+let editingId  = null;
+
+document.getElementById('userEmail').textContent = getAdminUser();
+
+async function loadAportes() {
+  const { data, error } = await supabase
+    .from('work_contributions')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) { showToast('Erro ao carregar aportes', 'error'); return; }
+  allAportes = data || [];
+  applyFilter();
+}
+
+function applyFilter() {
+  const fObra    = document.getElementById('fObra').value.toLowerCase().trim();
+  const fDataIni = document.getElementById('fDataIni').value;
+  const fDataFim = document.getElementById('fDataFim').value;
+
+  filtered = allAportes.filter(a => {
+    if (fObra    && !a.work_name.toLowerCase().includes(fObra)) return false;
+    if (fDataIni && new Date(a.created_at) < new Date(fDataIni)) return false;
+    if (fDataFim && new Date(a.created_at) > new Date(fDataFim + 'T23:59:59')) return false;
+    return true;
+  });
+
+  renderGrid();
+  renderSummary();
+}
+
+function clearFilter() {
+  ['fObra','fDataIni','fDataFim'].forEach(id => document.getElementById(id).value = '');
+  applyFilter();
+}
+
+function renderSummary() {
+  const total = filtered.reduce((s, a) => s + parseFloat(a.amount || 0), 0);
+  document.getElementById('summaryCards').innerHTML = `
+    <div class="summary-card">
+      <div class="label">Total de Aportes</div>
+      <div class="value">${filtered.length}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Valor Total</div>
+      <div class="value" style="color:var(--success)">R$ ${fmtMoney(total)}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Com Anexo</div>
+      <div class="value">${filtered.filter(a => a.attachment_url).length}</div>
+    </div>`;
+}
+
+function renderGrid() {
+  const grid = document.getElementById('aportesGrid');
+
+  if (!filtered.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state"><div class="icon">🏗️</div><h4>Nenhum aporte cadastrado</h4><p>Clique em "+ Novo Aporte" para começar</p></div></div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(a => `
+    <div class="aporte-card">
+      <h4>${escHtml(a.work_name)}</h4>
+      ${a.amount ? `<div class="amount">R$ ${fmtMoney(a.amount)}</div>` : ''}
+      ${a.description ? `<p>${escHtml(a.description)}</p>` : ''}
+      ${a.attachment_url ? `
+        <a href="${a.attachment_url}" target="_blank" class="aporte-attachment">
+          📎 ${escHtml(a.attachment_name || 'Ver Anexo')}
+        </a>` : ''}
+      <div class="date">📅 ${fmtDate(a.created_at)}</div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn btn-ghost btn-sm" onclick="viewAporte('${a.id}')">👁 Ver</button>
+        <button class="btn btn-ghost btn-sm" onclick="deleteAporte('${a.id}', '${escHtml(a.work_name)}')">🗑 Excluir</button>
+      </div>
+    </div>`).join('');
+}
+
+// ---- MODAL NOVO ----
+function openModal() {
+  editingId = null;
+  selectedFile = null;
+  document.getElementById('modalTitle').textContent = 'Novo Aporte';
+  document.getElementById('workName').value   = '';
+  document.getElementById('description').value = '';
+  document.getElementById('amount').value      = '';
+  document.getElementById('uploadPreview').innerHTML = '';
+  document.getElementById('aportFile').value   = '';
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+function closeModalOutside(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+}
+
+async function saveAporte() {
+  const workName = document.getElementById('workName').value.trim();
+  if (!workName) { showToast('Informe o nome da obra', 'warning'); return; }
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Salvando...';
+
+  const rawAmount = document.getElementById('amount').value.replace(',','.');
+  const amount = parseFloat(rawAmount) || null;
+
+  let attachment_url  = null;
+  let attachment_name = null;
+
+  if (selectedFile) {
+    const ext  = selectedFile.name.split('.').pop();
+    const path = `${Date.now()}_${selectedFile.name}`;
+    const { error: upErr } = await supabase.storage
+      .from('aportes')
+      .upload(path, selectedFile, { upsert: true });
+
+    if (upErr) {
+      showToast('Erro ao enviar arquivo.', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '💾 Salvar Aporte';
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from('aportes').getPublicUrl(path);
+    attachment_url  = urlData.publicUrl;
+    attachment_name = selectedFile.name;
+  }
+
+  const payload = {
+    work_name:   workName,
+    description: document.getElementById('description').value.trim() || null,
+    amount,
+    attachment_url,
+    attachment_name
+  };
+
+  const { error } = await supabase.from('work_contributions').insert(payload);
+
+  if (error) {
+    showToast('Erro ao salvar aporte.', 'error');
+  } else {
+    showToast('Aporte salvo com sucesso!', 'success');
+    closeModal();
+    loadAportes();
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '💾 Salvar Aporte';
+}
+
+async function deleteAporte(id, name) {
+  if (!confirm(`Excluir o aporte "${name}"?`)) return;
+  const { error } = await supabase.from('work_contributions').delete().eq('id', id);
+  if (error) { showToast('Erro ao excluir.', 'error'); return; }
+  showToast('Aporte excluído.', 'success');
+  loadAportes();
+}
+
+// ---- MODAL VISUALIZAR ----
+function viewAporte(id) {
+  const a = allAportes.find(x => x.id === id);
+  if (!a) return;
+  document.getElementById('viewTitle').textContent = a.work_name;
+  document.getElementById('viewBody').innerHTML = `
+    <div class="info-grid">
+      <div class="info-item"><label>Obra</label><p>${escHtml(a.work_name)}</p></div>
+      ${a.amount ? `<div class="info-item"><label>Valor</label><p style="color:var(--success);font-weight:700;">R$ ${fmtMoney(a.amount)}</p></div>` : ''}
+      <div class="info-item"><label>Data</label><p>${fmtDate(a.created_at)}</p></div>
+      ${a.description ? `<div class="info-item" style="grid-column:1/-1"><label>Descrição</label><p>${escHtml(a.description)}</p></div>` : ''}
+    </div>
+    ${a.attachment_url ? `
+      <div style="margin-top:16px;">
+        <a href="${a.attachment_url}" target="_blank" class="btn btn-primary">
+          📎 Abrir Anexo · ${escHtml(a.attachment_name || 'arquivo')}
+        </a>
+      </div>` : '<p style="color:#94A3B8;font-size:14px;">Nenhum anexo vinculado.</p>'}
+  `;
+  document.getElementById('viewOverlay').classList.add('open');
+}
+
+function closeView() {
+  document.getElementById('viewOverlay').classList.remove('open');
+}
+
+function closeViewOutside(e) {
+  if (e.target === document.getElementById('viewOverlay')) closeView();
+}
+
+// ---- FILE UPLOAD ----
+function handleFileSelect(input) {
+  if (input.files[0]) setSelectedFile(input.files[0]);
+}
+
+function handleFileDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadArea').classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) setSelectedFile(e.dataTransfer.files[0]);
+}
+
+function setSelectedFile(file) {
+  if (file.size > 20 * 1024 * 1024) { showToast('Arquivo muito grande (máx. 20MB)', 'error'); return; }
+  selectedFile = file;
+  document.getElementById('uploadPreview').innerHTML = `
+    <div class="uploaded-preview">
+      📎 <span>${escHtml(file.name)}</span>
+      <button class="btn btn-ghost btn-sm" onclick="clearFile()">✕</button>
+    </div>`;
+}
+
+function clearFile() {
+  selectedFile = null;
+  document.getElementById('uploadPreview').innerHTML = '';
+  document.getElementById('aportFile').value = '';
+}
+
+// ---- UTILS ----
+// Formata valor como moeda
+document.getElementById('amount').addEventListener('input', (e) => {
+  let v = e.target.value.replace(/\D/g, '');
+  if (!v) { e.target.value = ''; return; }
+  v = (parseInt(v) / 100).toFixed(2);
+  e.target.value = v.replace('.', ',');
+});
+
+function fmtMoney(v) {
+  return parseFloat(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+}
+
+function fmtDate(d) {
+  return new Date(d).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast show ${type}`;
+  setTimeout(() => t.className = 'toast', 3500);
+}
+
+loadAportes();
+</script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Administrativo · FinanceiroPro</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="login-page">
+    <div style="width:100%;max-width:400px;">
+      <a href="index.html" class="back-link" style="justify-content:center;margin-bottom:24px;">← Voltar ao início</a>
+
+      <div class="login-card">
+        <div class="logo">
+          <div class="icon">🔐</div>
+          <h2>Área Administrativa</h2>
+          <p>Acesso restrito a gestores</p>
+        </div>
+
+        <form id="loginForm">
+          <div class="form-group">
+            <label>Usuário</label>
+            <input type="text" id="username" class="form-control" placeholder="seu usuário" required autofocus>
+          </div>
+
+          <div class="form-group">
+            <label>Senha</label>
+            <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:14px;margin-top:8px;" id="loginBtn">
+            Entrar
+          </button>
+        </form>
+
+        <p style="text-align:center;font-size:12px;color:#94A3B8;margin-top:20px;">
+          Problemas de acesso? Contate o administrador do sistema.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/config.js"></script>
+  <script>
+    // Redireciona se já logado
+    if (localStorage.getItem('admin_session')) {
+      window.location.href = 'admin/kanban.html';
+    }
+
+    function showToast(msg, type = '') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = `toast show ${type}`;
+      setTimeout(() => t.className = 'toast', 3500);
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Entrando...';
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      const { data, error } = await supabase
+        .from('admins')
+        .select('username')
+        .eq('username', username)
+        .eq('password', password)
+        .single();
+
+      if (error || !data) {
+        showToast('Usuário ou senha incorretos.', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Entrar';
+        return;
+      }
+
+      localStorage.setItem('admin_session', data.username);
+      window.location.href = 'admin/kanban.html';
+    });
+  </script>
+</body>
+</html>
