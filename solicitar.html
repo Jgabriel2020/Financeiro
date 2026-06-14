@@ -15,7 +15,6 @@
         <i class="fa-solid fa-arrow-left"></i> Voltar ao início
       </a>
 
-      <!-- Formulário -->
       <div class="form-card" id="formSection">
         <div class="form-card-header">
           <div class="form-card-icon">
@@ -42,8 +41,17 @@
           </div>
 
           <div class="form-group">
+            <label>Estado <span class="required">*</span></label>
+            <select id="state" class="form-control" required disabled>
+              <option value="">Carregando estados...</option>
+            </select>
+          </div>
+
+          <div class="form-group">
             <label>Cidade <span class="required">*</span></label>
-            <input type="text" id="city" class="form-control" placeholder="Ex: São Paulo — SP" required>
+            <select id="city" class="form-control" required disabled>
+              <option value="">Selecione o estado primeiro</option>
+            </select>
           </div>
 
           <div class="form-group">
@@ -57,22 +65,16 @@
         </form>
       </div>
 
-      <!-- Sucesso -->
       <div class="form-card" id="successSection" style="display:none;">
         <div class="success-block">
-          <div class="success-icon">
-            <i class="fa-solid fa-check"></i>
-          </div>
+          <div class="success-icon"><i class="fa-solid fa-check"></i></div>
           <h3>Solicitação enviada!</h3>
           <p>Seu pedido foi recebido com sucesso.</p>
           <p style="margin-top:4px;">O pagamento será processado em até <strong>24 horas</strong>.</p>
-
           <div class="protocol-box" id="protocolDisplay"></div>
-
           <p style="font-size:12px;color:#94A3B8;margin-bottom:22px;">
             Guarde este número de protocolo para acompanhamento.
           </p>
-
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
             <a href="solicitar.html" class="btn btn-primary">Nova solicitação</a>
             <a href="index.html" class="btn btn-ghost">Voltar ao início</a>
@@ -85,9 +87,11 @@
   <div class="toast" id="toast"></div>
 
   <script src="js/config.js"></script>
+  <script src="js/ibge.js"></script>
   <script>
-    const valueInput = document.getElementById('value');
-    valueInput.addEventListener('input', e => {
+    setupStateCityPair('state', 'city');
+
+    document.getElementById('value').addEventListener('input', e => {
       let v = e.target.value.replace(/\D/g, '');
       if (!v) { e.target.value = ''; return; }
       e.target.value = (parseInt(v) / 100).toFixed(2).replace('.', ',');
@@ -100,31 +104,28 @@
       setTimeout(() => t.className = 'toast', 3500);
     }
 
-    function generateProtocol() {
-      return 'FP' + Date.now().toString().slice(-8).toUpperCase();
-    }
-
     document.getElementById('paymentForm').addEventListener('submit', async e => {
       e.preventDefault();
       const btn = document.getElementById('submitBtn');
+
+      const state = document.getElementById('state').value;
+      const city  = document.getElementById('city').value;
+      if (!state || !city) { showToast('Selecione o estado e a cidade.', 'warning'); return; }
+
+      const value = parseFloat(document.getElementById('value').value.replace(',', '.')) || 0;
+      if (value <= 0) { showToast('Informe um valor válido.', 'error'); return; }
+
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span> Enviando...';
 
-      const value = parseFloat(document.getElementById('value').value.replace(',', '.')) || 0;
-      if (value <= 0) {
-        showToast('Informe um valor válido.', 'error');
-        btn.disabled = false;
-        btn.textContent = 'Enviar Solicitação';
-        return;
-      }
-
-      const protocol = generateProtocol();
+      const protocol = 'FP' + Date.now().toString().slice(-8).toUpperCase();
 
       const { error } = await supabase.from('payment_requests').insert({
         pix_key:  document.getElementById('pix_key').value.trim(),
         value,
         name:     document.getElementById('name').value.trim(),
-        city:     document.getElementById('city').value.trim(),
+        state,
+        city,
         reason:   document.getElementById('reason').value.trim(),
         status:   'pendente',
         protocol
