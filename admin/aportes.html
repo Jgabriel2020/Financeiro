@@ -22,6 +22,7 @@
     <a href="kanban.html"    class="nav-item" onclick="closeSidebar()"><i class="fa-solid fa-table-columns"></i> Kanban</a>
     <a href="relatorios.html" class="nav-item" onclick="closeSidebar()"><i class="fa-solid fa-chart-bar"></i> Relatórios</a>
     <a href="aportes.html"   class="nav-item active" onclick="closeSidebar()"><i class="fa-solid fa-building"></i> Aportes de Obras</a>
+    <a href="cidades.html"   class="nav-item" onclick="closeSidebar()"><i class="fa-solid fa-location-dot"></i> Cidades Ativas</a>
   </nav>
   <div class="sidebar-footer">
     <div class="sidebar-user">
@@ -51,15 +52,9 @@
 
     <div class="filters-bar">
       <div class="form-group">
-        <label>Estado</label>
-        <select id="fState" class="form-control" onchange="onFilterStateChange()" disabled>
-          <option value="">Todos</option>
-        </select>
-      </div>
-      <div class="form-group">
         <label>Cidade</label>
-        <select id="fCity" class="form-control" onchange="applyFilter()" disabled>
-          <option value="">Todas</option>
+        <select id="fCity" class="form-control" onchange="applyFilter()">
+          <option value="">Todas as cidades</option>
         </select>
       </div>
       <div class="form-group">
@@ -101,19 +96,11 @@
         <label>Nome da Obra <span class="required">*</span></label>
         <input type="text" id="workName" class="form-control" placeholder="Ex: Obra Rua das Flores, 123">
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div class="form-group">
-          <label>Estado</label>
-          <select id="mState" class="form-control" disabled>
-            <option value="">Carregando...</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Cidade</label>
-          <select id="mCity" class="form-control" disabled>
-            <option value="">Selecione o estado</option>
-          </select>
-        </div>
+      <div class="form-group">
+        <label>Cidade da Obra</label>
+        <select id="mCity" class="form-control">
+          <option value="">Selecione a cidade</option>
+        </select>
       </div>
       <div class="form-group">
         <label>Descrição</label>
@@ -162,7 +149,7 @@
 
 <script src="../js/config.js"></script>
 <script src="../js/auth-guard.js"></script>
-<script src="../js/ibge.js"></script>
+<script src="../js/cities.js"></script>
 <script>
 let allAportes = [], filtered = [], selectedFile = null;
 
@@ -177,32 +164,7 @@ function closeSidebar() {
   document.getElementById('sidebarOverlay').classList.remove('open');
 }
 
-// Carrega estados no filtro
-(async () => {
-  const sel = document.getElementById('fState');
-  try {
-    const res  = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome');
-    const data = await res.json();
-    data.forEach(s => sel.appendChild(new Option(`${s.nome} (${s.sigla})`, s.sigla)));
-    sel.disabled = false;
-  } catch { sel.disabled = false; }
-})();
-
-async function onFilterStateChange() {
-  const uf   = document.getElementById('fState').value;
-  const cSel = document.getElementById('fCity');
-  cSel.innerHTML = '<option value="">Todas as cidades</option>';
-  cSel.disabled  = true;
-  if (uf) {
-    try {
-      const res  = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios?orderBy=nome`);
-      const data = await res.json();
-      data.forEach(c => cSel.appendChild(new Option(c.nome, c.nome)));
-      cSel.disabled = false;
-    } catch { cSel.disabled = false; }
-  }
-  applyFilter();
-}
+loadActiveCities('fCity', 'Todas as cidades');
 
 async function loadAportes() {
   const { data, error } = await supabase
@@ -215,16 +177,14 @@ async function loadAportes() {
 }
 
 function applyFilter() {
-  const fObra  = document.getElementById('fObra').value.toLowerCase().trim();
-  const fState = document.getElementById('fState').value;
-  const fCity  = document.getElementById('fCity').value;
-  const fIni   = document.getElementById('fDataIni').value;
-  const fFim   = document.getElementById('fDataFim').value;
+  const fObra = document.getElementById('fObra').value.toLowerCase().trim();
+  const fCity = document.getElementById('fCity').value;
+  const fIni  = document.getElementById('fDataIni').value;
+  const fFim  = document.getElementById('fDataFim').value;
 
   filtered = allAportes.filter(a => {
-    if (fObra  && !a.work_name.toLowerCase().includes(fObra)) return false;
-    if (fState && a.state !== fState) return false;
-    if (fCity  && a.city  !== fCity)  return false;
+    if (fObra && !a.work_name.toLowerCase().includes(fObra)) return false;
+    if (fCity && a.city !== fCity) return false;
     if (fIni && new Date(a.created_at) < new Date(fIni)) return false;
     if (fFim && new Date(a.created_at) > new Date(fFim + 'T23:59:59')) return false;
     return true;
@@ -234,10 +194,7 @@ function applyFilter() {
 }
 
 function clearFilter() {
-  ['fObra','fState','fDataIni','fDataFim'].forEach(id => document.getElementById(id).value = '');
-  const cSel = document.getElementById('fCity');
-  cSel.innerHTML = '<option value="">Todas as cidades</option>';
-  cSel.disabled = true;
+  ['fObra','fCity','fDataIni','fDataFim'].forEach(id => document.getElementById(id).value = '');
   applyFilter();
 }
 
@@ -291,7 +248,7 @@ function openModal() {
   ['workName','description','amount'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('uploadPreview').innerHTML = '';
   document.getElementById('aportFile').value = '';
-  setupStateCityPair('mState', 'mCity');
+  loadActiveCities('mCity', 'Selecione a cidade');
   document.getElementById('modalOverlay').classList.add('open');
 }
 function closeModal()         { document.getElementById('modalOverlay').classList.remove('open'); }
@@ -306,7 +263,6 @@ async function saveAporte() {
   btn.innerHTML = '<span class="spinner"></span> Salvando...';
 
   const amount = parseFloat(document.getElementById('amount').value.replace(',','.')) || null;
-  const state  = document.getElementById('mState').value || null;
   const city   = document.getElementById('mCity').value  || null;
 
   let attachment_url = null, attachment_name = null;
@@ -325,7 +281,7 @@ async function saveAporte() {
   const { error } = await supabase.from('work_contributions').insert({
     work_name: workName,
     description: document.getElementById('description').value.trim() || null,
-    amount, state, city, attachment_url, attachment_name
+    amount, city, attachment_url, attachment_name
   });
 
   if (error) { showToast('Erro ao salvar aporte.', 'error'); }

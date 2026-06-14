@@ -41,16 +41,9 @@
           </div>
 
           <div class="form-group">
-            <label>Estado <span class="required">*</span></label>
-            <select id="state" class="form-control" required disabled>
-              <option value="">Carregando estados...</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Cidade <span class="required">*</span></label>
-            <select id="city" class="form-control" required disabled>
-              <option value="">Selecione o estado primeiro</option>
+            <label>Cidade da Obra <span class="required">*</span></label>
+            <select id="city" class="form-control" required>
+              <option value="">Carregando...</option>
             </select>
           </div>
 
@@ -87,9 +80,9 @@
   <div class="toast" id="toast"></div>
 
   <script src="js/config.js"></script>
-  <script src="js/ibge.js"></script>
+  <script src="js/cities.js"></script>
   <script>
-    setupStateCityPair('state', 'city');
+    loadActiveCities('city', 'Selecione a cidade da obra');
 
     document.getElementById('value').addEventListener('input', e => {
       let v = e.target.value.replace(/\D/g, '');
@@ -99,22 +92,18 @@
 
     function showToast(msg, type = '') {
       const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.className = `toast show ${type}`;
+      t.textContent = msg; t.className = `toast show ${type}`;
       setTimeout(() => t.className = 'toast', 3500);
     }
 
     document.getElementById('paymentForm').addEventListener('submit', async e => {
       e.preventDefault();
-      const btn = document.getElementById('submitBtn');
-
-      const state = document.getElementById('state').value;
       const city  = document.getElementById('city').value;
-      if (!state || !city) { showToast('Selecione o estado e a cidade.', 'warning'); return; }
-
       const value = parseFloat(document.getElementById('value').value.replace(',', '.')) || 0;
+      if (!city)      { showToast('Selecione a cidade da obra.', 'warning'); return; }
       if (value <= 0) { showToast('Informe um valor válido.', 'error'); return; }
 
+      const btn = document.getElementById('submitBtn');
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span> Enviando...';
 
@@ -122,10 +111,8 @@
 
       const { error } = await supabase.from('payment_requests').insert({
         pix_key:  document.getElementById('pix_key').value.trim(),
-        value,
+        value, city,
         name:     document.getElementById('name').value.trim(),
-        state,
-        city,
         reason:   document.getElementById('reason').value.trim(),
         status:   'pendente',
         protocol
@@ -133,14 +120,12 @@
 
       if (error) {
         showToast('Erro ao enviar. Tente novamente.', 'error');
-        btn.disabled = false;
-        btn.textContent = 'Enviar Solicitação';
-        return;
+        btn.disabled = false; btn.textContent = 'Enviar Solicitação'; return;
       }
 
-      document.getElementById('formSection').style.display = 'none';
+      document.getElementById('formSection').style.display  = 'none';
       document.getElementById('successSection').style.display = 'block';
-      document.getElementById('protocolDisplay').textContent = protocol;
+      document.getElementById('protocolDisplay').textContent  = protocol;
     });
   </script>
 </body>
