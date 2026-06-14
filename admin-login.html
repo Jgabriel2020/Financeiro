@@ -32,7 +32,13 @@
 
           <div class="form-group">
             <label>Senha</label>
-            <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+            <div style="position:relative;">
+              <input type="password" id="password" class="form-control" placeholder="••••••••" required style="padding-right:42px;">
+              <button type="button" id="togglePassword" onclick="togglePass()"
+                style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94A3B8;font-size:15px;padding:4px;line-height:1;">
+                <i class="fa-regular fa-eye" id="eyeIcon"></i>
+              </button>
+            </div>
           </div>
 
           <button type="submit" class="btn btn-primary btn-lg" style="width:100%;justify-content:center;margin-top:6px;" id="loginBtn">
@@ -51,6 +57,18 @@
 
   <script src="js/config.js"></script>
   <script>
+    function togglePass() {
+      const input = document.getElementById('password');
+      const icon  = document.getElementById('eyeIcon');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fa-regular fa-eye-slash';
+      } else {
+        input.type = 'password';
+        icon.className = 'fa-regular fa-eye';
+      }
+    }
+
     if (localStorage.getItem('admin_session')) {
       window.location.href = 'admin/kanban.html';
     }
