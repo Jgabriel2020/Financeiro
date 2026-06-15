@@ -17,12 +17,12 @@
     <div class="brand-icon"><i class="fa-solid fa-chart-line"></i></div>
     <div class="brand-text"><strong>FinanceiroPro</strong><span>Painel Admin</span></div>
   </div>
-  <nav>
+  <nav style="overflow-y:auto;flex:1;">
     <div class="nav-section">Menu</div>
-    <a href="kanban.html"    class="nav-item" onclick="closeSidebar()"><i class="fa-solid fa-table-columns"></i> Kanban</a>
+    <a href="kanban.html"    class="nav-item" onclick="closeSidebar()"><i class="fa-solid fa-table-columns"></i> Quadro de Pagamento</a>
     <a href="relatorios.html" class="nav-item" onclick="closeSidebar()"><i class="fa-solid fa-chart-bar"></i> Relatórios</a>
     <a href="aportes.html"   class="nav-item active" onclick="closeSidebar()"><i class="fa-solid fa-building"></i> Aportes de Obras</a>
-    <a href="cidades.html"   class="nav-item" onclick="closeSidebar()"><i class="fa-solid fa-location-dot"></i> Cidades Ativas</a>
+    <a href="cadastros.html" class="nav-item" onclick="closeSidebar()"><i class="fa-solid fa-table-list"></i> Cadastros</a>
   </nav>
   <div class="sidebar-footer">
     <div class="sidebar-user">
@@ -88,7 +88,7 @@
 <div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
   <div class="modal" style="max-width:580px;">
     <div class="modal-header">
-      <h3>Novo Aporte</h3>
+      <h3 id="modalTitle">Novo Aporte</h3>
       <button class="btn-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body">
@@ -123,6 +123,7 @@
           <p>Imagens, PDF, Excel, Word — máx. 20 MB</p>
         </div>
         <div id="uploadPreview"></div>
+        <div id="existingAttachment"></div>
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
         <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
@@ -151,7 +152,7 @@
 <script src="../js/auth-guard.js"></script>
 <script src="../js/cities.js"></script>
 <script>
-let allAportes = [], filtered = [], selectedFile = null;
+let allAportes = [], filtered = [], selectedFile = null, editingAporteId = null;
 
 document.getElementById('userLabel').textContent = getAdminUser();
 
@@ -236,6 +237,9 @@ function renderGrid() {
         <button class="btn btn-ghost btn-sm" onclick="viewAporte('${a.id}')">
           <i class="fa-regular fa-eye"></i> Detalhes
         </button>
+        <button class="btn btn-ghost btn-sm" onclick="editAporte('${a.id}')">
+          <i class="fa-regular fa-pen-to-square"></i> Editar
+        </button>
         <button class="btn btn-ghost btn-sm" onclick="deleteAporte('${a.id}','${esc(a.work_name)}')">
           <i class="fa-regular fa-trash-can"></i> Excluir
         </button>
@@ -243,13 +247,38 @@ function renderGrid() {
     </div>`).join('');
 }
 
-function openModal() {
+function openModal(aporte = null) {
+  editingAporteId = null;
   selectedFile = null;
   ['workName','description','amount'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('uploadPreview').innerHTML = '';
+  document.getElementById('existingAttachment').innerHTML = '';
   document.getElementById('aportFile').value = '';
-  loadActiveCities('mCity', 'Selecione a cidade');
+  document.getElementById('modalTitle').textContent = aporte ? 'Editar Aporte' : 'Novo Aporte';
+
+  if (aporte) {
+    editingAporteId = aporte.id;
+    document.getElementById('workName').value    = aporte.work_name   || '';
+    document.getElementById('description').value = aporte.description || '';
+    if (aporte.amount) {
+      const cents = Math.round(parseFloat(aporte.amount) * 100);
+      document.getElementById('amount').value = (cents / 100).toFixed(2).replace('.', ',');
+    }
+    if (aporte.attachment_url) {
+      document.getElementById('existingAttachment').innerHTML =
+        `<div style="margin-top:8px;"><a href="${aporte.attachment_url}" target="_blank" class="btn btn-ghost btn-sm"><i class="fa-solid fa-paperclip"></i> Ver anexo atual</a></div>`;
+    }
+  }
+
+  loadActiveCities('mCity', 'Selecione a cidade').then(() => {
+    if (aporte?.city) document.getElementById('mCity').value = aporte.city;
+  });
   document.getElementById('modalOverlay').classList.add('open');
+}
+
+function editAporte(id) {
+  const a = allAportes.find(x => x.id === id);
+  if (a) openModal(a);
 }
 function closeModal()         { document.getElementById('modalOverlay').classList.remove('open'); }
 function closeModalOutside(e) { if (e.target.id === 'modalOverlay') closeModal(); }
@@ -278,14 +307,23 @@ async function saveAporte() {
     attachment_name = selectedFile.name;
   }
 
-  const { error } = await supabase.from('work_contributions').insert({
+  const payload = {
     work_name: workName,
     description: document.getElementById('description').value.trim() || null,
     amount, city, attachment_url, attachment_name
-  });
+  };
+  // Remove null attachment fields if no new file uploaded
+  if (!selectedFile) { delete payload.attachment_url; delete payload.attachment_name; }
+
+  let error;
+  if (editingAporteId) {
+    ({ error } = await supabase.from('work_contributions').update(payload).eq('id', editingAporteId));
+  } else {
+    ({ error } = await supabase.from('work_contributions').insert(payload));
+  }
 
   if (error) { showToast('Erro ao salvar aporte.', 'error'); }
-  else { showToast('Aporte salvo!', 'success'); closeModal(); loadAportes(); }
+  else { showToast(editingAporteId ? 'Aporte atualizado!' : 'Aporte salvo!', 'success'); closeModal(); loadAportes(); }
   btn.disabled=false; btn.innerHTML='<i class="fa-solid fa-floppy-disk"></i> Salvar';
 }
 
