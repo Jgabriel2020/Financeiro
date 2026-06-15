@@ -51,11 +51,11 @@
       <div id="successAlert" style="display:none;"></div>
 
       <!-- Card do formulário -->
-      <div class="card">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow-sm);">
         <form id="paymentForm">
 
           <!-- Dados do solicitante -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
             <div class="form-group" style="margin-bottom:0;">
               <label>Chave Pix <span class="required">*</span></label>
               <input type="text" id="pix_key" class="form-control" placeholder="CPF, e-mail, telefone ou chave aleatória" required>
