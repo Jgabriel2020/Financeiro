@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solicitar Pagamento · FinanceiroPro</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon"><i class="fa-solid fa-chart-line"></i></div>
+    <div class="brand-text"><strong>FinanceiroPro</strong><span>Painel Admin</span></div>
+  </div>
+  <nav style="overflow-y:auto;flex:1;">
+    <div class="nav-section">Menu</div>
+    <a href="kanban.html"     class="nav-item" onclick="closeSidebar()"><i class="fa-solid fa-table-columns"></i> Quadro de Pagamento</a>
+    <a href="relatorios.html" class="nav-item" onclick="closeSidebar()"><i class="fa-solid fa-chart-bar"></i> Relatórios</a>
+    <a href="aportes.html"    class="nav-item" onclick="closeSidebar()"><i class="fa-solid fa-building"></i> Aportes de Obras</a>
+    <a href="cadastros.html"  class="nav-item" onclick="closeSidebar()"><i class="fa-solid fa-table-list"></i> Cadastros</a>
+    <a href="solicitar.html"  class="nav-item active" onclick="closeSidebar()"><i class="fa-solid fa-file-invoice-dollar"></i> Solicitar Pagamento</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="avatar"><i class="fa-solid fa-user"></i></div>
+      <span id="userLabel">—</span>
+    </div>
+    <button class="btn-logout" onclick="logout()">
+      <i class="fa-solid fa-right-from-bracket"></i> Sair
+    </button>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left" style="display:flex;align-items:center;gap:10px;">
+      <button class="hamburger" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+      <h2>Solicitar Pagamento</h2>
+    </div>
+  </div>
+
+  <div class="page-body">
+    <div style="max-width:560px;">
+
+      <!-- Formulário -->
+      <div class="card" id="formSection">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+          <div style="width:42px;height:42px;border-radius:10px;background:var(--primary-light,#ede9fe);display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:18px;flex-shrink:0;">
+            <i class="fa-solid fa-file-invoice-dollar"></i>
+          </div>
+          <div>
+            <h3 style="margin:0;font-size:16px;">Nova Solicitação</h3>
+            <p style="margin:2px 0 0;font-size:13px;color:var(--muted);">Preencha os dados para registrar o pagamento</p>
+          </div>
+        </div>
+
+        <form id="paymentForm">
+          <div class="form-group">
+            <label>Chave Pix <span class="required">*</span></label>
+            <input type="text" id="pix_key" class="form-control" placeholder="CPF, e-mail, telefone ou chave aleatória" required>
+          </div>
+
+          <div class="form-group">
+            <label>Valor (R$) <span class="required">*</span></label>
+            <input type="text" id="value" class="form-control" placeholder="0,00" required>
+          </div>
+
+          <div class="form-group">
+            <label>Nome Completo <span class="required">*</span></label>
+            <input type="text" id="name" class="form-control" placeholder="Nome de quem vai receber" required>
+          </div>
+
+          <div class="form-group">
+            <label>Cidade da Obra <span class="required">*</span></label>
+            <select id="city" class="form-control" required>
+              <option value="">Carregando...</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Motivo do Pagamento <span class="required">*</span></label>
+            <textarea id="reason" class="form-control" rows="3" placeholder="Descreva o motivo da solicitação..." required></textarea>
+          </div>
+
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
+            <button type="button" class="btn btn-ghost" onclick="resetForm()">
+              <i class="fa-solid fa-xmark"></i> Limpar
+            </button>
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+              <i class="fa-solid fa-paper-plane"></i> Enviar Solicitação
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Sucesso -->
+      <div class="card" id="successSection" style="display:none;">
+        <div style="text-align:center;padding:12px 0 8px;">
+          <div style="width:56px;height:56px;border-radius:50%;background:var(--success-light,#dcfce7);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:24px;color:var(--success,#10b981);">
+            <i class="fa-solid fa-check"></i>
+          </div>
+          <h3 style="margin:0 0 6px;font-size:18px;">Solicitação enviada!</h3>
+          <p style="margin:0;color:var(--muted);font-size:14px;">O pedido foi registrado com sucesso.</p>
+          <p style="margin:4px 0 20px;color:var(--muted);font-size:14px;">O pagamento será processado em até <strong>24 horas</strong>.</p>
+
+          <div style="background:var(--bg);border:1.5px dashed var(--border);border-radius:10px;padding:14px 20px;margin-bottom:20px;display:inline-block;min-width:220px;">
+            <p style="margin:0 0 4px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Número de Protocolo</p>
+            <p style="margin:0;font-size:20px;font-weight:800;color:var(--primary);letter-spacing:1px;" id="protocolDisplay"></p>
+          </div>
+
+          <p style="font-size:12px;color:var(--muted);margin:0 0 22px;">Guarde este número para acompanhamento.</p>
+
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="resetForm()">
+              <i class="fa-solid fa-plus"></i> Nova Solicitação
+            </button>
+            <a href="kanban.html" class="btn btn-ghost">
+              <i class="fa-solid fa-table-columns"></i> Ver Quadro
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="../js/config.js"></script>
+<script src="../js/auth-guard.js"></script>
+<script src="../js/cities.js"></script>
+<script>
+document.getElementById('userLabel').textContent = getAdminUser();
+
+loadActiveCities('city', 'Selecione a cidade da obra');
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+}
+
+document.getElementById('value').addEventListener('input', e => {
+  let v = e.target.value.replace(/\D/g, '');
+  if (!v) { e.target.value = ''; return; }
+  e.target.value = (parseInt(v) / 100).toFixed(2).replace('.', ',');
+});
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast show ${type}`;
+  setTimeout(() => t.className = 'toast', 3500);
+}
+
+function resetForm() {
+  document.getElementById('paymentForm').reset();
+  loadActiveCities('city', 'Selecione a cidade da obra');
+  document.getElementById('formSection').style.display    = '';
+  document.getElementById('successSection').style.display = 'none';
+}
+
+document.getElementById('paymentForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const city  = document.getElementById('city').value;
+  const value = parseFloat(document.getElementById('value').value.replace(',', '.')) || 0;
+  if (!city)      { showToast('Selecione a cidade da obra.', 'warning'); return; }
+  if (value <= 0) { showToast('Informe um valor válido.', 'error'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Enviando...';
+
+  const protocol = 'FP' + Date.now().toString().slice(-8).toUpperCase();
+
+  const { error } = await supabase.from('payment_requests').insert({
+    pix_key:  document.getElementById('pix_key').value.trim(),
+    value,
+    city,
+    name:     document.getElementById('name').value.trim(),
+    reason:   document.getElementById('reason').value.trim(),
+    status:   'pendente',
+    protocol
+  });
+
+  if (error) {
+    showToast('Erro ao enviar. Tente novamente.', 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar Solicitação';
+    return;
+  }
+
+  document.getElementById('formSection').style.display    = 'none';
+  document.getElementById('successSection').style.display = '';
+  document.getElementById('protocolDisplay').textContent  = protocol;
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar Solicitação';
+});
+</script>
+</body>
+</html>
